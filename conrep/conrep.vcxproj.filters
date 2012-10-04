@@ -1,0 +1,254 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\boost python">
+      <UniqueIdentifier>{adc5202a-13ce-4e07-b9a3-9d32c0ac04a0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="assert.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="console_util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="console_window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="context_menu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="d3root.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="except_handle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="exception.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="file_util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="font_util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mem_stream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pywrapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="reg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="root_window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="settings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="shell_process.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="win_util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\dict.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\errors.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\exec.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\import.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\list.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\long.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\module.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\numeric.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object_operators.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object_protocol.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\slice.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\str.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\tuple.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\wrapper.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\converter\arg_to_python_base.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\converter\builtin_converters.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\converter\from_python.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\converter\registry.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\converter\type_id.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\class.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\enum.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\function.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\function_doc_signature.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\inheritance.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\iterator.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\life_support.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\pickle_support.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\stl_iterator.cpp">
+      <Filter>Source Files\boost python</Filter>
+    </ClCompile>
+    <ClCompile Include="char_info_buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="text_renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="conrep.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="assert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="atl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="console_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="console_window.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="context_menu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="d3root.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dimension.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dimension_ops.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="except_handle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="exception.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="file_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="font_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lexical_cast.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mem_stream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="message.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pywrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="reg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="root_window.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="settings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="shell_process.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tchar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="win_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="windows.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gdiplus.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="char_info_buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="text_renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
