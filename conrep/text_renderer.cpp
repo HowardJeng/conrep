@@ -207,8 +207,9 @@ namespace console {
         int plane_usage[CONSOLE_COLORS];
         int first_plane[CONSOLE_COLORS];
 
+        ASSERT(((plane_buffer_.end() - plane_buffer_.begin()) % CONSOLE_COLORS) == 0);
+        std::fill(plane_buffer_.begin(), plane_buffer_.end(), _T(' '));
         for (int i = 0; i < console_dim_.height; ++i) {
-          std::fill(plane_buffer_.begin(), plane_buffer_.end(), _T(' '));
           std::fill_n(plane_usage, CONSOLE_COLORS, 0);
           std::fill_n(first_plane, CONSOLE_COLORS, -1);
           for (int j = 0; j < console_dim_.width; ++j) {
@@ -239,13 +240,15 @@ namespace console {
                 char_dim_.height * console_dim_.height + gutter_size_
               };
               int line_start = j * console_dim_.width + f;
+              int length = plane_usage[j] - f;
               HRESULT hr = font_->DrawText(sprite,
                                             &plane_buffer_[line_start],
-                                            plane_usage[j] - f,
+                                            length,
                                             &r,
                                             DT_LEFT | DT_TOP | DT_NOCLIP | DT_SINGLELINE,
                                             colors[j]);
               if (FAILED(hr)) DX_EXCEPT("Failed call to ID3DXFont::DrawText(). ", hr);
+              std::fill_n(plane_buffer_.begin() + line_start, length, _T(' '));
             }
           }
         }
