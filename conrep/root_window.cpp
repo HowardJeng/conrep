@@ -25,7 +25,7 @@ namespace console {
       
       static void register_window_class(HINSTANCE hInstance);
         
-      bool spawn_window(LPCTSTR command_line);
+      bool spawn_window(const MessageData & message_data);
       bool spawn_window(const Settings & settings);
         
       static ATOM get_class_atom(void) {
@@ -195,9 +195,9 @@ namespace console {
       WIN_EXCEPT("Failed call to RegisterClass(). ");
   }
 
-  bool RootWindow::spawn_window(LPCTSTR command_line) {
+  bool RootWindow::spawn_window(const MessageData & message_data) {
     try {
-      Settings settings(command_line, exe_dir_.c_str());
+      Settings settings(message_data.process_id, message_data.cmd_line, exe_dir_.c_str());
       return spawn_window(settings);
     } catch (std::exception & e) {
       tstringstream sstr;
@@ -259,7 +259,9 @@ namespace console {
         break;
       case WM_COPYDATA:
         { COPYDATASTRUCT * cbs = reinterpret_cast<COPYDATASTRUCT *>(lParam);
-          spawn_window(reinterpret_cast<LPCTSTR>(cbs->lpData));
+          MessageData * msg_data = reinterpret_cast<MessageData *>(cbs->lpData);
+          spawn_window(*msg_data);
+          return TRUE;
         }
         break;
       case WM_CREATE:

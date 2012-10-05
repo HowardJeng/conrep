@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <iostream>
 
 #pragma warning(push)
 #pragma warning(disable : 4100)
@@ -30,17 +31,18 @@ namespace console {
   bool get_bool(variables_map & vm, const char * name) {
     tstring var_string = vm[name].as<tstring>();
     toupper(var_string);
-    if (var_string == _T("true")) return true;
+    if (var_string == _T("TRUE")) return true;
     return false;
   }
 
-  Settings::Settings(LPCTSTR command_line, LPCTSTR exe_directory)
+  Settings::Settings(DWORD process_id, LPCTSTR command_line, LPCTSTR exe_directory)
     : run_app(true)
   {
     tstring config_file_name;
     options_description config_file_desc;
     config_file_desc.add_options()
       ("cfgfile", tvalue(&config_file_name)->DEFAULT_VALUE("conrep.cfg"), "configuration file")
+      ("help", "display option descriptions")
     ;
 
     options_description main_options;
@@ -57,7 +59,7 @@ namespace console {
       ("execute_filter", tvalue<tstring>()->DEFAULT_VALUE("true"), "execute stack trace filter")
       ("snap_distance", tvalue(&snap_distance)->default_value(10), "distance to snap to work area")
       ("gutter_size", tvalue(&gutter_size)->default_value(2), "size of inside border")
-      ("z_order", tvalue<tstring>()->DEFAULT_VALUE("normal"), "z order")
+      ("z_order", tvalue<tstring>()->DEFAULT_VALUE("normal"), "z order [top, bottom, normal]")
     ;
 
     const std::vector<tstring> args = split_winmain(command_line);
@@ -70,6 +72,16 @@ namespace console {
     if ((config_file_name.find(_T('\\')) == tstring::npos) &&
         (config_file_name.find(_T('/')) == tstring::npos)) {
       config_file_name = tstring(exe_directory) + _T("\\") + config_file_name;
+    }
+
+    if (vm.count("help")) {      
+      if (AttachConsole(process_id)) {
+        freopen("CONOUT$", "w", stdout);
+        std::cout << cmd_line_options << std::endl;
+        FreeConsole();
+      }
+      run_app = false;
+      return;
     }
 
     std::ifstream ifs(config_file_name.c_str());

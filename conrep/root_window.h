@@ -9,10 +9,20 @@
 namespace console {
   struct Settings;
 
+  #pragma warning(push)
+  #pragma warning(disable : 4200)
+  struct MessageData {
+    size_t size;
+    DWORD process_id;
+    TCHAR cmd_line[];
+  };
+  #pragma warning(pop)
+  typedef std::unique_ptr<MessageData, void (*)(void *)> MsgDataPtr;
+
   class __declspec(novtable) IRootWindow {
     public:
       virtual ~IRootWindow() = 0;
-      virtual bool spawn_window(LPCTSTR command_line) = 0;
+      virtual bool spawn_window(const MessageData & message_data) = 0;
       virtual bool spawn_window(const Settings & settings) = 0;
       virtual HWND hwnd(void) const = 0;
   };

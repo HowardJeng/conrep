@@ -4,6 +4,7 @@
 #include "windows.h"
 #include <dbghelp.h>
 
+#include <iostream>
 #include <sstream>
 #include <fstream>
 
@@ -102,6 +103,17 @@ class MMapHWND {
 const TCHAR MUTEX_NAME[] = _T("Local\\conrep{7c1123af-2ffe-41e7-aebd-da66f803aca7}");
 const TCHAR MMAP_NAME[]  = _T("Local\\conrep{4b581c5e-5f5a-4fb7-b185-1252cea83d92}");
 
+
+MsgDataPtr get_message_data(DWORD process_id, const TCHAR * cmd_line) {
+  size_t length = _tcslen(cmd_line);
+  size_t size = sizeof(MessageData) + sizeof(TCHAR) * length;
+  MessageData * msg = (MessageData *)malloc(size);
+  msg->size = size;
+  msg->process_id = process_id;
+  _tcscpy(msg->cmd_line, cmd_line);
+  return MsgDataPtr(msg, &free);
+}
+
 // actual logic for winmain; separates out C++ exception handling from SEH exception
 //   handling 
 int do_winmain1(HINSTANCE hInstance, 
@@ -134,12 +146,16 @@ int do_winmain1(HINSTANCE hInstance,
       //   try reading the HWND value before it is set. Fortunately the shared memory
       //   area is guaranteed to be zeroed, and zero isn't a valid HWND value.
       if (hwnd != 0) {
+        MsgDataPtr msg_data = get_message_data(GetCurrentProcessId(), lpCmdLine);
         COPYDATASTRUCT cds = {
           0,
-          static_cast<DWORD>((_tcslen(lpCmdLine) + 1) * sizeof(TCHAR)),
-          lpCmdLine
+          static_cast<DWORD>(msg_data->size),
+          &*msg_data
         };
+        BOOL r = AttachConsole(ATTACH_PARENT_PROCESS);
         SendMessage(hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds));
+        std::cout << std::endl;
+        if (r) FreeConsole();
         return 0;
       } else {
         DWORD ret_val = WaitForSingleObject(mutex, 100);
@@ -166,7 +182,7 @@ int do_winmain1(HINSTANCE hInstance,
   COMInit com_initializer;
   
   std::auto_ptr<IRootWindow> root_window(get_root_window(hInstance, exe_dir));
-  Settings settings(lpCmdLine, exe_dir.c_str());
+  Settings settings(ATTACH_PARENT_PROCESS, lpCmdLine, exe_dir.c_str());
   execute_filter = settings.execute_filter;
 
   if (!root_window->spawn_window(settings)) return 0;

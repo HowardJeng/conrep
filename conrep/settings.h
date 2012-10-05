@@ -13,7 +13,7 @@ namespace console {
   };
 
   struct Settings {
-    Settings(LPCTSTR command_line, LPCTSTR exe_directory);
+    Settings(DWORD process_id, LPCTSTR command_line, LPCTSTR exe_directory);
     
     bool run_app;
     
