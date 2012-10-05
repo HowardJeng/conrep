@@ -196,8 +196,18 @@ namespace console {
   }
 
   bool RootWindow::spawn_window(LPCTSTR command_line) {
-    Settings settings(command_line, exe_dir_.c_str());
-    return spawn_window(settings);
+    try {
+      Settings settings(command_line, exe_dir_.c_str());
+      return spawn_window(settings);
+    } catch (std::exception & e) {
+      tstringstream sstr;
+      sstr << _T("Error parsing settings: ") << e.what();
+      MessageBox(NULL, 
+                  sstr.str().c_str(),
+                  _T("Error parsing settings"),
+                  MB_OK);
+      return false;
+    }
   }
 
     

@@ -5,7 +5,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "conrep", "conrep\conrep.vcx
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7E9C7A9D-E2D8-4684-95CB-7ECEBB624809}"
 	ProjectSection(SolutionItems) = preProject
-		Performance1.psess = Performance1.psess
 		Performance2.psess = Performance2.psess
 	EndProjectSection
 EndProject
@@ -19,8 +18,8 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{DE874170-2230-427B-8139-E8EEACE995D2}.Debug|Win32.ActiveCfg = Debug|Win32
 		{DE874170-2230-427B-8139-E8EEACE995D2}.Debug|Win32.Build.0 = Debug|Win32
-		{DE874170-2230-427B-8139-E8EEACE995D2}.Debug|x64.ActiveCfg = Release|x64
-		{DE874170-2230-427B-8139-E8EEACE995D2}.Debug|x64.Build.0 = Release|x64
+		{DE874170-2230-427B-8139-E8EEACE995D2}.Debug|x64.ActiveCfg = Debug|x64
+		{DE874170-2230-427B-8139-E8EEACE995D2}.Debug|x64.Build.0 = Debug|x64
 		{DE874170-2230-427B-8139-E8EEACE995D2}.Release|Win32.ActiveCfg = Release|Win32
 		{DE874170-2230-427B-8139-E8EEACE995D2}.Release|Win32.Build.0 = Release|Win32
 		{DE874170-2230-427B-8139-E8EEACE995D2}.Release|x64.ActiveCfg = Release|x64

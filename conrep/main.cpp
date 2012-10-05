@@ -4,6 +4,7 @@
 #include "windows.h"
 #include <dbghelp.h>
 
+#include <sstream>
 #include <fstream>
 
 #include "assert.h"
@@ -12,14 +13,12 @@
 #include "exception.h"
 #include "file_util.h"
 #include "gdiplus.h"
-#include "pywrapper.h"
 #include "root_window.h"
 #include "settings.h"
 
 using namespace ATL;
 using namespace Gdiplus;
 using namespace console;
-using namespace boost::python;
 
 // RAII initializer for GDI+
 class GDIPlusInit { 
@@ -163,7 +162,6 @@ int do_winmain1(HINSTANCE hInstance,
     }
   }
 
-  PythonInitializer py_initializer(exe_dir);
   GDIPlusInit gdi_initializer;
   COMInit com_initializer;
   
@@ -203,13 +201,6 @@ DWORD do_exception_filter(const tstring & exe_dir,
       UntypedException ue(*eps);
       if (std::exception * e = exception_cast<std::exception>(ue)) {
         narrow_stream << typeid(*e).name() << "\n" << e->what();
-      } else if (exception_cast<error_already_set>(ue)) {
-        PyErr_Print();
-
-        PyWrapper py;
-        object sys = py.import("sys");
-        std::string err_text = extract<std::string>(sys["stderr"].attr("getvalue")());
-        narrow_stream << err_text;
       } else {
         narrow_stream << "Unknown C++ exception thrown.\n";
         get_exception_types(narrow_stream, ue);

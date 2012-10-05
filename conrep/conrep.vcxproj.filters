@@ -13,8 +13,8 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\boost python">
-      <UniqueIdentifier>{adc5202a-13ce-4e07-b9a3-9d32c0ac04a0}</UniqueIdentifier>
+    <Filter Include="Source Files\boost program options">
+      <UniqueIdentifier>{eb2269d3-ad05-43f7-991e-f9afe795eee0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -51,9 +51,6 @@
     <ClCompile Include="mem_stream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pywrapper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="reg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -69,95 +66,44 @@
     <ClCompile Include="win_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\dict.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\errors.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\exec.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\import.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\list.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\long.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\module.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\numeric.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object_operators.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object_protocol.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\slice.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\str.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\tuple.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\wrapper.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\converter\arg_to_python_base.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\converter\builtin_converters.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\converter\from_python.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\converter\registry.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\converter\type_id.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\class.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\enum.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\function.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\function_doc_signature.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\inheritance.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\iterator.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\life_support.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\pickle_support.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\python\src\object\stl_iterator.cpp">
-      <Filter>Source Files\boost python</Filter>
-    </ClCompile>
     <ClCompile Include="char_info_buffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="text_renderer.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\cmdline.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\config_file.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\convert.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\options_description.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\parsers.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\positional_options.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\split.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\utf8_codecvt_facet.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\value_semantic.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\variables_map.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\winmain.cpp">
+      <Filter>Source Files\boost program options</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -209,9 +155,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="message.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="pywrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="reg.h">

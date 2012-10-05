@@ -4,171 +4,89 @@
 #include "settings.h"
 
 #include <algorithm>
+#include <fstream>
 
-#include "pywrapper.h"
+#pragma warning(push)
+#pragma warning(disable : 4100)
+#pragma warning(disable : 4512)
+#include <boost/program_options.hpp>
+#pragma warning(pop)
+
+using namespace boost::program_options;
 
 namespace console {
-  bool is_slash_or_quote(TCHAR c) {
-    switch (c) {
-      case _T('\\'):
-      case _T('"'):
-        return true;
-      default:
-        return false;
-    }
+  #ifdef UNICODE
+    #define tvalue wvalue
+    #define DEFAULT_VALUE(x) default_value(_T(x), x)
+  #else
+    #define tvalue value
+    #define DEFAULT_VALUE(x) default_value(x)
+  #endif
+
+  void toupper(tstring & var_string) {
+    std::transform(var_string.begin(), var_string.end(), var_string.begin(), _totupper);
   }
-    
-  class SlashQuoteSpace : std::unary_function<bool, TCHAR> {
-    public:
-      SlashQuoteSpace(const std::ctype<TCHAR> & ct) : ct_(ct) {}
-      bool operator()(TCHAR c) {
-        switch (c) {
-          case _T('\\'):
-          case _T('"'):
-            return true;
-          default:
-            return ct_.is(std::ctype_base::space, c);
-        }
-      }
-    private:
-      SlashQuoteSpace & operator=(const SlashQuoteSpace &);
-      const std::ctype<TCHAR> & ct_;
-  };
-  
-  // splits command line into argument vector. does not handle wildcard expansion
-  //   attempts to follow character interpretations as specified in
-  //   CommandLineToArgvW() MSDN entry. Does not use CommandLineToArgvW() as that
-  //   function implicitly adds the module name to the command line (and then
-  //   procedes to parse without regards to spaces).
-  std::vector<tstring> split_winmain(LPCTSTR input) {
-    size_t len = _tcslen(input);
-      
-    const TCHAR * i = input;
-    const TCHAR * e = input + len;
 
-    std::locale loc;
-    const std::ctype<TCHAR> & ct = std::use_facet<std::ctype<TCHAR> >(loc);
-    i = ct.scan_not(std::ctype_base::space, i, e);
-      
-    tstring current;
-    bool inside_quoted = false;
-    int backslash_count = 0;
-
-    std::vector<tstring> result;
-    while (i != e) {
-      if (*i == _T('"')) {
-        // '"' preceded by even number (n) of backslashes generates
-        // n/2 backslashes and is a quoted block delimiter
-        current.append(backslash_count / 2, _T('\\'));
-        if (backslash_count % 2 == 0) {
-          inside_quoted = !inside_quoted;
-        } else {
-          current += _T('"');
-        }
-        backslash_count = 0;
-        ++i;
-      } else if (*i == _T('\\')) {
-        ++backslash_count;
-        ++i;
-      } else {
-        // Not quote or backslash. All accumulated backslashes should be
-        // added
-        if (backslash_count) {
-          current.append(backslash_count, _T('\\'));
-          backslash_count = 0;
-        }
-        if (ct.is(std::ctype_base::space, *i) && !inside_quoted) {
-          // Space outside quoted section terminate the current argument
-          result.push_back(current);
-          current.resize(0);
-          i = ct.scan_not(std::ctype_base::space, i, e);
-        } else if (inside_quoted) {
-          const TCHAR * ptr = std::find_if(i + 1, e, is_slash_or_quote);
-          current.append(i, ptr);
-          i = ptr;
-        } else {
-          const TCHAR * ptr = std::find_if(i + 1, e, SlashQuoteSpace(ct));
-          current.append(i, ptr);
-          i = ptr;
-        }
-      }
-    }
-
-    // If we have trailing backslashes, add them
-    current.append(backslash_count, '\\');
-
-    // If we have non-empty 'current' or we're still in quoted
-    // section (even if 'current' is empty), add the last token.
-    if (!current.empty() || inside_quoted)
-      result.push_back(current);        
-
-    return result;
+  bool get_bool(variables_map & vm, const char * name) {
+    tstring var_string = vm[name].as<tstring>();
+    toupper(var_string);
+    if (var_string == _T("true")) return true;
+    return false;
   }
 
   Settings::Settings(LPCTSTR command_line, LPCTSTR exe_directory)
     : run_app(true)
   {
-    using namespace std;
-    using namespace boost::python;
-    
-    vector<tstring> args = split_winmain(command_line);
-    PyWrapper wrap;
-    object arg_list = list();
-    for (vector<tstring>::iterator i = args.begin();
-         i != args.end();
-         ++i) {
-      arg_list.attr("append")(*i);
-    }
-    
-    object config_file;
-    { tstring file_name = tstring(exe_directory) + _T("\\conrep.cfg");
-      object builtins = wrap["__builtins__"];
-      object open = builtins.attr("open");
-      config_file = open(file_name);
+    tstring config_file_name;
+    options_description config_file_desc;
+    config_file_desc.add_options()
+      ("cfgfile", tvalue(&config_file_name)->DEFAULT_VALUE("conrep.cfg"), "configuration file")
+    ;
+
+    options_description main_options;
+    main_options.add_options()
+      ("shell", tvalue(&shell)->DEFAULT_VALUE("cmd.exe"), "command shell to start")
+      ("args", tvalue(&shell_arguments)->DEFAULT_VALUE(""), "arguments to pass to shell")
+      ("font_name", tvalue(&font_name)->DEFAULT_VALUE("Courier New"), "name of font to use")
+      ("font_size", tvalue(&font_size)->default_value(10), "size of font to use")
+      ("rows", tvalue(&rows)->default_value(24), "number of rows")
+      ("columns", tvalue(&columns)->default_value(80), "number of columns")
+      ("maximize", tvalue<tstring>()->DEFAULT_VALUE("false"), "fill the working area")
+      ("extended_chars", tvalue<tstring>()->DEFAULT_VALUE("false"), "use extended characters")
+      ("intensify", tvalue<tstring>()->DEFAULT_VALUE("false"), "intensify foreground colors")
+      ("execute_filter", tvalue<tstring>()->DEFAULT_VALUE("true"), "execute stack trace filter")
+      ("snap_distance", tvalue(&snap_distance)->default_value(10), "distance to snap to work area")
+      ("gutter_size", tvalue(&gutter_size)->default_value(2), "size of inside border")
+      ("z_order", tvalue<tstring>()->DEFAULT_VALUE("normal"), "z order")
+    ;
+
+    const std::vector<tstring> args = split_winmain(command_line);
+
+    variables_map vm;
+    options_description cmd_line_options;
+    cmd_line_options.add(config_file_desc).add(main_options);
+    store(basic_command_line_parser<TCHAR>(args).options(cmd_line_options).allow_unregistered().run(), vm);
+    vm.notify();
+    if ((config_file_name.find(_T('\\')) == tstring::npos) &&
+        (config_file_name.find(_T('/')) == tstring::npos)) {
+      config_file_name = tstring(exe_directory) + _T("\\") + config_file_name;
     }
 
-    object settings_mod = wrap.import("settings");
-    object parse_settings = settings_mod["parse_settings"];
-    object result = parse_settings(arg_list, config_file);
-    config_file.attr("close")();
-    
-    tstring err = extract<tstring>(result.attr("err"));
-    if (err != _T("")) {
-      MessageBox(0, err.c_str(), _T("Config error"), MB_OK);
-      run_app = false;
-      return;
-    }
-    
-    shell           = extract<tstring>(result.attr("shell"));
-    shell_arguments = extract<tstring>(result.attr("args"));
-    
-    font_name = extract<tstring>(result.attr("font_name"));
-    font_size = extract<int>(result.attr("font_size"));
-    
-    tstring max_string = extract<tstring>(result.attr("maximize"));
-    if (max_string == _T("TRUE")) {
-      maximize = true;
+    std::ifstream ifs(config_file_name.c_str());
+    store(parse_config_file(ifs, main_options), vm);
+    vm.notify();
+
+    maximize = get_bool(vm, "maximize");
+    if (maximize) {
       rows = -1;
       columns = -1;
-    } else {
-      maximize = false;
-      rows = extract<int>(result.attr("rows"));
-      columns = extract<int>(result.attr("columns"));
     }
-    
-    snap_distance = extract<int>(result.attr("snap_distance"));
-    gutter_size = extract<int>(result.attr("gutter_size"));
-    
-    tstring extended_chars_string = extract<tstring>(result.attr("extended_chars"));
-    extended_chars = (extended_chars_string == _T("TRUE"));
-    
-    tstring intensify_string = extract<tstring>(result.attr("intensify"));
-    intensify = (intensify_string == _T("TRUE"));
-    
-    tstring execute_filter_string = extract<tstring>(result.attr("execute_filter"));
-    execute_filter = (execute_filter_string == _T("TRUE"));
-    
-    tstring z_order_string = extract<tstring>(result.attr("zorder"));
+    extended_chars = get_bool(vm, "extended_chars");
+    intensify = get_bool(vm, "intensify");
+    execute_filter = get_bool(vm, "execute_filter");
+
+    tstring z_order_string = vm["z_order"].as<tstring>();
+    toupper(z_order_string);
     if (z_order_string == _T("TOP")) {
       z_order = Z_TOP;
     } else if (z_order_string == _T("BOTTOM")) {
