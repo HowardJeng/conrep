@@ -60,6 +60,10 @@ namespace console {
       ("snap_distance", tvalue(&snap_distance)->default_value(10), "distance to snap to work area")
       ("gutter_size", tvalue(&gutter_size)->default_value(2), "size of inside border")
       ("z_order", tvalue<tstring>()->DEFAULT_VALUE("normal"), "z order [top, bottom, normal]")
+      ("active_pre_alpha", tvalue(&active_pre_alpha)->default_value(0xA0), "pre-multiply alpha for active window")
+      ("active_post_alpha", tvalue(&active_post_alpha)->default_value(0xFF), "post-multiply alpha for active window")
+      ("inactive_pre_alpha", tvalue(&inactive_pre_alpha)->default_value(0xD0), "pre-multiply alpha for inactive window")
+      ("inactive_post_alpha", tvalue(&inactive_post_alpha)->default_value(0x50), "post-multiply alpha for inactive window")
     ;
 
     const std::vector<tstring> args = split_winmain(command_line);
@@ -106,5 +110,10 @@ namespace console {
     } else {
       z_order = Z_NORMAL;
     }
+
+    active_pre_alpha = std::min<unsigned int>(active_pre_alpha, std::numeric_limits<unsigned char>::max());
+    active_post_alpha = std::min<unsigned int>(active_post_alpha, std::numeric_limits<unsigned char>::max());
+    inactive_pre_alpha = std::min<unsigned int>(inactive_pre_alpha, std::numeric_limits<unsigned char>::max());
+    inactive_post_alpha = std::min<unsigned int>(inactive_post_alpha, std::numeric_limits<unsigned char>::max());
   }
 }

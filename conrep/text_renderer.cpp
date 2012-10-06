@@ -64,9 +64,13 @@ namespace console {
       console_dim_(Dimension(settings.columns, settings.rows)),
       gutter_size_(settings.gutter_size),
       extended_chars_(settings.extended_chars),
-      intensify_(settings.intensify)
+      intensify_(settings.intensify),
+      active_pre_alpha_(static_cast<unsigned char>(settings.active_pre_alpha)),
+      inactive_pre_alpha_(static_cast<unsigned char>(settings.inactive_pre_alpha))
   {
     get_logfont(font_, &lf_);
+    ASSERT(settings.active_pre_alpha <= std::numeric_limits<unsigned char>::max());
+    ASSERT(settings.inactive_pre_alpha <= std::numeric_limits<unsigned char>::max());
   }
 
   void TextRenderer::toggle_extended_chars(void) {
@@ -191,9 +195,9 @@ namespace console {
         SceneLock scene(*root);
               
         if (active) {
-          root->clear(D3DCOLOR_ARGB(0xA0, 0, 0, 0));
+          root->clear(D3DCOLOR_ARGB(active_pre_alpha_, 0, 0, 0));
         } else {
-          root->clear(D3DCOLOR_ARGB(0xD0, 0, 0, 0));
+          root->clear(D3DCOLOR_ARGB(inactive_pre_alpha_, 0, 0, 0));
         }
 
         for (int i = 0; i < console_dim_.height; ++i) {

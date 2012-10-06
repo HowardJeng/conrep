@@ -35,6 +35,11 @@ namespace console {
     bool execute_filter;
     
     ZOrder z_order;
+
+    unsigned int active_pre_alpha;
+    unsigned int active_post_alpha;
+    unsigned int inactive_pre_alpha;
+    unsigned int inactive_post_alpha;
   };
 }
 

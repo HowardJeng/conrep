@@ -49,6 +49,9 @@ namespace console {
       CharInfoBuffer char_info_buffer_; //   window. Member variables to avoid
       // the cost of creation/deletion in every text repaint call.
 
+      unsigned char active_pre_alpha_;
+      unsigned char inactive_pre_alpha_;
+
       TextRenderer(const TextRenderer &);
       TextRenderer & operator=(const TextRenderer &);
 

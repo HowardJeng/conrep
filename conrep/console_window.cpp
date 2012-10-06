@@ -43,8 +43,13 @@ namespace console {
           menu_(get_context_menu(hInstance)),
           work_area_(get_work_area()),
           z_order_(settings.z_order),
-          text_renderer_(root, settings)
+          text_renderer_(root, settings),
+          active_post_alpha_(static_cast<unsigned char>(settings.active_post_alpha)),
+          inactive_post_alpha_(static_cast<unsigned char>(settings.inactive_post_alpha))
       {
+        ASSERT(settings.active_post_alpha <= std::numeric_limits<unsigned char>::max());
+        ASSERT(settings.inactive_post_alpha <= std::numeric_limits<unsigned char>::max());
+
         // window size stuff
         Dimension max_window_dim = get_max_window_dim(work_area_);
         Dimension max_console_dim = text_renderer_.console_dim_from_window_size(max_window_dim, scrollbar_width_, WINDOW_STYLE);
@@ -213,6 +218,9 @@ namespace console {
       RECT work_area_;
       ZOrder z_order_;
       TextRenderer text_renderer_;
+
+      unsigned char active_post_alpha_;
+      unsigned char inactive_post_alpha_;
     private:
       BOOL on_create(void) {
         ASSERT(state_ == INITIALIZING);
@@ -253,12 +261,12 @@ namespace console {
               EnumDisplayMonitors(NULL, NULL, &draw_background_enum_proc, reinterpret_cast<LPARAM>(this));
 
               if (active_) {
-                text_renderer_.render(sprite_, 0xffffffff);
+                text_renderer_.render(sprite_, D3DCOLOR_ARGB(active_post_alpha_, 0xff, 0xff, 0xff));
                 // if GetTickCount() rolls over it doesn't matter
                 #pragma warning(suppress: 28159)
                 if ((GetTickCount() / 500) % 2) text_renderer_.draw_cursor(sprite_);
               } else {
-                text_renderer_.render(sprite_, 0x50ffffff);
+                text_renderer_.render(sprite_, D3DCOLOR_ARGB(inactive_post_alpha_, 0x50, 0xff, 0xff, 0xff));
               }
             }
 
