@@ -37,25 +37,6 @@ namespace console {
     D3DCOLOR_XRGB(0xFF, 0xFF, 0x00),
     D3DCOLOR_XRGB(0xFF, 0xFF, 0xFF)
   };
-  // colors used for text background
-  const D3DCOLOR bg_colors[CONSOLE_COLORS] = {
-    D3DCOLOR_ARGB(0xB0, 0x00, 0x00, 0x00), // this color should actually never be used
-    D3DCOLOR_ARGB(0xB0, 0x00, 0x00, 0x80),
-    D3DCOLOR_ARGB(0xB0, 0x00, 0x80, 0x00),
-    D3DCOLOR_ARGB(0xB0, 0x00, 0x80, 0x80),
-    D3DCOLOR_ARGB(0xB0, 0x80, 0x00, 0x00),
-    D3DCOLOR_ARGB(0xB0, 0x80, 0x00, 0x80),
-    D3DCOLOR_ARGB(0xB0, 0x80, 0x80, 0x00),
-    D3DCOLOR_ARGB(0xB0, 0xC0, 0xC0, 0xC0),
-    D3DCOLOR_ARGB(0xB0, 0x80, 0x80, 0x80),
-    D3DCOLOR_ARGB(0xB0, 0x00, 0x00, 0xFF),
-    D3DCOLOR_ARGB(0xB0, 0x00, 0xFF, 0x00),
-    D3DCOLOR_ARGB(0xB0, 0x00, 0xFF, 0xFF),
-    D3DCOLOR_ARGB(0xB0, 0xFF, 0x00, 0x00),
-    D3DCOLOR_ARGB(0xB0, 0xFF, 0x00, 0xFF),
-    D3DCOLOR_ARGB(0xB0, 0xFF, 0xFF, 0x00),
-    D3DCOLOR_ARGB(0xB0, 0xFF, 0xFF, 0xFF)
-  };
 
   TextRenderer::TextRenderer(RootPtr & root, const Settings & settings)
     : white_texture_(root->white_texture()),
@@ -204,7 +185,7 @@ namespace console {
           for (int j = 0; j < console_dim_.width; ++j) {
             int offset = i * console_dim_.width + j;
             int bg_index = (char_info_buffer_[offset].Attributes >> 4) & 0xf;
-            if (bg_index) draw_block(sprite, j, i, bg_colors[bg_index]);
+            if (bg_index) draw_block(sprite, j, i, colors[bg_index]);
           }
         }
 
