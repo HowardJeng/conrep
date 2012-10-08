@@ -147,8 +147,7 @@ namespace console {
           ConsoleWindowImpl::class_name
         };
         class_atom = RegisterClass(&wc);
-        if (class_atom == 0) 
-          WIN_EXCEPT("Failed call to RegisterClass(). ");
+        if (class_atom == 0) WIN_EXCEPT("Failed call to RegisterClass(). ");
       }
         
       HWND get_hwnd(void) const {
@@ -226,7 +225,8 @@ namespace console {
         ASSERT(state_ == INITIALIZING);
 
         if (!SetForegroundWindow(hWnd_)) {
-          if (GetLastError() != 0) WIN_EXCEPT("Failed call to SetForegroundWindow(). ");
+          DWORD err = GetLastError();
+          if (err != 0) WIN_EXCEPT2("Failed call to SetForegroundWindow(). ", err);
         }
           
         return TRUE;
@@ -266,7 +266,7 @@ namespace console {
                 #pragma warning(suppress: 28159)
                 if ((GetTickCount() / 500) % 2) text_renderer_.draw_cursor(sprite_);
               } else {
-                text_renderer_.render(sprite_, D3DCOLOR_ARGB(inactive_post_alpha_, 0x50, 0xff, 0xff, 0xff));
+                text_renderer_.render(sprite_, D3DCOLOR_ARGB(inactive_post_alpha_, 0xff, 0xff, 0xff));
               }
             }
 
@@ -297,12 +297,13 @@ namespace console {
         if (state_ == RUNNING) {
           SCROLLINFO si = { sizeof(SCROLLINFO), SIF_ALL };
           if (!GetScrollInfo(shell_process_.window_handle(), SB_VERT, &si)) {
-            if (GetLastError() == ERROR_INVALID_WINDOW_HANDLE) {
+            DWORD err = GetLastError();
+            if (err == ERROR_INVALID_WINDOW_HANDLE) {
               // this can happen if update_scrollbar is called after the shell process
               //   terminates but before the timer detects it.
               CLOSE_SELF();
             }
-            WIN_EXCEPT("Failed call to GetScrollInfo().");
+            WIN_EXCEPT2("Failed call to GetScrollInfo(). ", err);
           }
           ASSERT(si.cbSize == sizeof(SCROLLINFO));
           ASSERT(si.fMask == SIF_ALL);
@@ -357,7 +358,7 @@ namespace console {
         //   the text is the same first makes sense
         TCHAR window_text[BUFFER_SIZE] = {};
         if (!GetWindowText(hWnd_, window_text, BUFFER_SIZE)) WIN_EXCEPT("Failed call to GetWindowText(). ");
-        if (_tcscmp(console_title, window_text) == 0) return;
+        if (_tcsncmp(console_title, window_text, BUFFER_SIZE) == 0) return;
 
         if (!SetWindowText(hWnd_, console_title)) WIN_EXCEPT("Failed call to SetWindowText(). ");
       }
@@ -566,9 +567,7 @@ namespace console {
         if (!InvalidateRect(hWnd_, 0, FALSE)) WIN_EXCEPT("Failed call to InvalidateRect(). ");
       }
 
-      LRESULT ActualWndProc(UINT Msg,
-                            WPARAM wParam,
-                            LPARAM lParam) {
+      LRESULT ActualWndProc(UINT Msg, WPARAM wParam, LPARAM lParam) {
         switch (Msg) {
           case CRM_BACKGROUND_CHANGE:
             invalidate_self();
@@ -654,14 +653,13 @@ namespace console {
         return 0;
       }
 
-      static LRESULT CALLBACK InitialWndProc(HWND hWnd,
-                                              UINT Msg,
-                                              WPARAM wParam,
-                                              LPARAM lParam) {
+      static LRESULT CALLBACK InitialWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
         if (Msg == WM_NCCREATE) {
           LPCREATESTRUCT create_struct = reinterpret_cast<LPCREATESTRUCT>(lParam);
+          ASSERT(create_struct != nullptr);
           void * lpCreateParam = create_struct->lpCreateParams;
           ConsoleWindowImpl * this_window = reinterpret_cast<ConsoleWindowImpl *>(lpCreateParam);
+          ASSERT(this_window != nullptr);
           ASSERT(this_window->hWnd_ == 0);
           this_window->hWnd_ = hWnd;
           set_userdata(hWnd, this_window);
@@ -671,10 +669,7 @@ namespace console {
         return DefWindowProc(hWnd, Msg, wParam, lParam);
       }
         
-      static LRESULT CALLBACK StaticWndProc(HWND hWnd,
-                                            UINT Msg,
-                                            WPARAM wParam,
-                                            LPARAM lParam) {
+      static LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
         LONG_PTR user_data = GetWindowLongPtr(hWnd, GWLP_USERDATA);
         ConsoleWindowImpl * this_window = reinterpret_cast<ConsoleWindowImpl *>(user_data);
         ASSERT(this_window);
