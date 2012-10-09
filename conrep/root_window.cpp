@@ -48,17 +48,13 @@ namespace console {
       void on_close_msg(HWND window);
       void on_lost_device(void) {
         if (root_->is_device_lost()) {
-          for (WindowMap::iterator itr = window_map_.begin();
-                itr != window_map_.end();
-                ++itr) {
+          for (WindowMap::iterator itr = window_map_.begin(); itr != window_map_.end(); ++itr) {
             itr->second->dispose_resources();
           }
           HRESULT hr = root_->try_recover();
           if (hr == D3DERR_DEVICENOTRESET) {
             // restore surfaces
-            for (WindowMap::iterator itr = window_map_.begin();
-                  itr != window_map_.end();
-                  ++itr) {
+            for (WindowMap::iterator itr = window_map_.begin(); itr != window_map_.end(); ++itr) {
               itr->second->restore_resources();
             }
           } else if (hr == D3DERR_DEVICELOST) {
@@ -68,14 +64,11 @@ namespace console {
           }
         }
       }
-      void broadcast_message(AppMessage message, 
-                              WPARAM wParam = 0, 
-                              LPARAM lParam = 0) {
+      void broadcast_message(AppMessage message,  WPARAM wParam = 0, LPARAM lParam = 0) {
         for (WindowMap::iterator itr = window_map_.begin();
               itr != window_map_.end();
               ++itr) {
-          if (!PostMessage(itr->first, message, wParam, lParam))
-            WIN_EXCEPT("Failed call to PostMessage(). ");
+          if (!PostMessage(itr->first, message, wParam, lParam)) WIN_EXCEPT("Failed call to PostMessage(). ");
         }
       }
         
@@ -131,8 +124,7 @@ namespace console {
   {
     ASSERT(HIWORD(class_atom) == 0);
     ASSERT(class_atom);
-    if (!class_atom) 
-      MISC_EXCEPT("Attempted to create window without registering class.");
+    if (!class_atom) MISC_EXCEPT("Attempted to create window without registering class.");
     if (!wallpaper_info_.wallpaper_name.empty())
       wallpaper_write_time_ = get_modify_time(wallpaper_info_.wallpaper_name);
 
@@ -174,8 +166,7 @@ namespace console {
 
   void RootWindow::register_window_class(HINSTANCE hInstance) {
     ASSERT(!class_atom);
-    if (class_atom)
-      MISC_EXCEPT("RootWindow::register_window_class() called multiple times.");
+    if (class_atom) MISC_EXCEPT("RootWindow::register_window_class() called multiple times.");
     
     WNDCLASS wc = {
       CS_HREDRAW | CS_VREDRAW,
@@ -191,8 +182,7 @@ namespace console {
     };
       
     class_atom = RegisterClass(&wc);
-    if (class_atom == 0) 
-      WIN_EXCEPT("Failed call to RegisterClass(). ");
+    if (class_atom == 0) WIN_EXCEPT("Failed call to RegisterClass(). ");
   }
 
   bool RootWindow::spawn_window(const MessageData & message_data) {
@@ -202,10 +192,7 @@ namespace console {
     } catch (std::exception & e) {
       tstringstream sstr;
       sstr << _T("Error parsing settings: ") << e.what();
-      MessageBox(NULL, 
-                  sstr.str().c_str(),
-                  _T("Error parsing settings"),
-                  MB_OK);
+      MessageBox(NULL,  sstr.str().c_str(), _T("Error parsing settings"), MB_OK);
       return false;
     }
   }
@@ -216,19 +203,13 @@ namespace console {
     try {
       ASSERT(root_ != nullptr);
       
-      WindowPtr window(create_console_window(hWnd_,
-                                              hInstance_,
-                                              settings, 
-                                              root_));
+      WindowPtr window(create_console_window(hWnd_, hInstance_, settings, root_));
       ASSERT(window_map_.find(window->get_hwnd()) == window_map_.end());
       window_map_[window->get_hwnd()] = window;
     } catch (std::exception & e) {
       tstringstream sstr;
       sstr << _T("Error creating console window: ") << e.what();
-      MessageBox(NULL, 
-                  sstr.str().c_str(),
-                  _T("Error creating console window"),
-                  MB_OK);
+      MessageBox(NULL, sstr.str().c_str(), _T("Error creating console window"), MB_OK);
       return false;
     }
     return true;
@@ -244,8 +225,7 @@ namespace console {
     ASSERT(itr->second->get_state() == DEAD);
     window_map_.erase(itr);
     if (window_map_.empty()) {
-      if (!PostMessage(hWnd_, WM_CLOSE, 0, 0))
-        WIN_EXCEPT("Failed call to PostMessage(). ");
+      if (!PostMessage(hWnd_, WM_CLOSE, 0, 0)) WIN_EXCEPT("Failed call to PostMessage(). ");
     }
   }
     
