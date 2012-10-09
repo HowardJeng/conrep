@@ -336,9 +336,7 @@ namespace console {
         
       void on_timer(void) {
         ASSERT(state_ == RUNNING);
-        bool is_active = (GetForegroundWindow() == hWnd_);
-        if (is_active != active_) {
-          active_ = is_active;
+        if (check_active_changed()) {
           text_renderer_.invalidate();
         }
         if (ProcessLock pl = shell_process_) {
@@ -389,10 +387,17 @@ namespace console {
         invalidate_self();
       }
 
-      void on_activate(void) {
+      bool check_active_changed(void) {
         bool is_active = (GetForegroundWindow() == hWnd_);
         if (is_active != active_) {
           active_ = is_active;
+          return true;
+        }
+        return false;
+      }
+
+      void on_activate(void) {
+        if (check_active_changed()) {
           text_renderer_.invalidate();
           invalidate_self();
         }
@@ -594,6 +599,7 @@ namespace console {
             return 0;
           case WM_CREATE:
             { LPCREATESTRUCT create_struct = reinterpret_cast<LPCREATESTRUCT>(lParam);
+              ASSERT(create_struct != nullptr);
               void * lpCreateParam = create_struct->lpCreateParams;
               ConsoleWindowImpl * this_window = reinterpret_cast<ConsoleWindowImpl *>(lpCreateParam);
               ASSERT(this_window == this);
