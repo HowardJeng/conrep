@@ -307,6 +307,7 @@ namespace console {
           }
           ASSERT(si.cbSize == sizeof(SCROLLINFO));
           ASSERT(si.fMask == SIF_ALL);
+          // SetScrollInfo()'s return doesn't contain an error value so can be ignored
           SetScrollInfo(hWnd_, SB_VERT, &si, TRUE);
         }
       }
@@ -376,7 +377,7 @@ namespace console {
         } else {
           HMONITOR mon = MonitorFromWindow(hWnd_, MONITOR_DEFAULTTOPRIMARY);
           MONITORINFO info = { sizeof(MONITORINFO) };
-          GetMonitorInfo(mon, &info);
+          if (!GetMonitorInfo(mon, &info)) WIN_EXCEPT("Failed call to GetMonitorInfo(). ");
           work_area_ = info.rcWork;
           snap_window(*r, info.rcWork, snap_distance_);
         }
@@ -469,8 +470,8 @@ namespace console {
 
           HMONITOR mon = MonitorFromWindow(hWnd_, MONITOR_DEFAULTTOPRIMARY);
           MONITORINFO info = { sizeof(MONITORINFO) };
-          GetMonitorInfo(mon, &info);
-            
+          if (!GetMonitorInfo(mon, &info)) WIN_EXCEPT("Failed call to GetMonitorInfo(). ");
+           
           if (delta_left == 0)   new_x  = info.rcWork.left;
           if (delta_top  == 0)   new_y  = info.rcWork.top;
           if (delta_right == 0)  {
@@ -486,6 +487,7 @@ namespace console {
         
       void toggle_console_visible(void) {
         console_visible_ = !console_visible_;
+        // ShowWindow()'s return value doesn't contain error information so can be ignored
         if (console_visible_) {
           ShowWindow(shell_process_.window_handle(), SW_SHOW);
         } else {
@@ -620,7 +622,7 @@ namespace console {
           case WM_NCHITTEST:
             { POINTS p = MAKEPOINTS(lParam); 
               WINDOWINFO wi = {};
-              GetWindowInfo(hWnd_, &wi);
+              if (!GetWindowInfo(hWnd_, &wi)) WIN_EXCEPT("Failed call to GetWindowInfo(). ");
               int window_x = p.x - wi.rcWindow.left;
               int scroll_start = wi.rcWindow.right - wi.rcWindow.left + 1
                                 - 2 * wi.cxWindowBorders
