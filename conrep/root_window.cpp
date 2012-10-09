@@ -266,6 +266,7 @@ namespace console {
         break;
       case WM_CREATE:
         { LPCREATESTRUCT create_struct = reinterpret_cast<LPCREATESTRUCT>(lParam);
+          ASSERT(create_struct != nullptr);
           void * lpCreateParam = create_struct->lpCreateParams;
           RootWindow * this_window = reinterpret_cast<RootWindow *>(lpCreateParam);
           ASSERT(this_window == this);
@@ -294,8 +295,10 @@ namespace console {
                                               LPARAM lParam) {
     if (Msg == WM_NCCREATE) {
       LPCREATESTRUCT create_struct = reinterpret_cast<LPCREATESTRUCT>(lParam);
+      ASSERT(create_struct != nullptr);
       void * lpCreateParam = create_struct->lpCreateParams;
       RootWindow * this_window = reinterpret_cast<RootWindow *>(lpCreateParam);
+      ASSERT(this_window != nullptr);
       ASSERT(this_window->hWnd_ == 0);
       this_window->hWnd_ = hWnd;
       set_userdata(hWnd, this_window);
