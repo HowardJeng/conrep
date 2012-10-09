@@ -56,6 +56,7 @@ namespace console {
 
   void TextRenderer::toggle_extended_chars(void) {
     extended_chars_ = !extended_chars_;
+    char_info_buffer_.invalidate();
   }
 
   Dimension TextRenderer::console_dim_from_window_size(Dimension window_dim, INT scrollbar_width, DWORD style) {
@@ -164,10 +165,14 @@ namespace console {
       draw_block(sprite, cursor_pos_.X, cursor_pos_.Y, 0xB0C0C0C0);
     }
   }
+
+  void TextRenderer::invalidate(void) {
+    char_info_buffer_.invalidate();
+  }
         
   void TextRenderer::update_text_buffer(ProcessLock & pl, RootPtr & root, SpritePtr & sprite, bool active) {
     ASSERT(text_texture_ != nullptr);
-    pl.get_console_info(char_info_buffer_, cursor_pos_);
+    pl.get_console_info(console_dim_, char_info_buffer_, cursor_pos_);
 
     if (!char_info_buffer_.match()) {
       root->set_render_target(text_texture_);
@@ -209,7 +214,8 @@ namespace console {
 
             if (intensify_ && fg_index) fg_index |= 0x8;
                   
-            if ( (extended_chars_ && (c != 0)) || (_istprint(c) && !_istspace(c)) ) {
+            if ( (c != 0) && 
+                 (extended_chars_ || (_istprint(c) && !_istspace(c))) ) {
               plane_buffer_[fg_index * console_dim_.width + j] = c;
               plane_usage[fg_index] = j + 1;
               if (first_plane[fg_index] == -1) first_plane[fg_index] = j;

@@ -16,6 +16,7 @@ namespace console {
       CharInfoBuffer();
 
       void resize(Dimension new_size);
+      void invalidate(void);
       bool match(void) const;
 
       const CHAR_INFO & operator[](size_t index) const;

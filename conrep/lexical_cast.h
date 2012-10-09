@@ -10,6 +10,7 @@
   #pragma warning(disable:4671)
   #pragma warning(disable:4673)
   #pragma warning(disable:4701)
+  #pragma warning(disable:6323)
   #include <boost/lexical_cast.hpp>
 #pragma warning(pop)
 

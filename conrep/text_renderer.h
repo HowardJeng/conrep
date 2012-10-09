@@ -21,6 +21,7 @@ namespace console {
       void dispose(void);
       void draw_cursor(SpritePtr & sprite);
       Dimension get_client_size(void);
+      void invalidate(void);
       bool poll_console_size(ProcessLock & pl);
       void recreate_font(DevicePtr & device);
       void render(SpritePtr & sprite, D3DCOLOR color);

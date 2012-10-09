@@ -108,6 +108,7 @@ MsgDataPtr get_message_data(DWORD process_id, const TCHAR * cmd_line) {
   size_t length = _tcslen(cmd_line);
   size_t size = sizeof(MessageData) + sizeof(TCHAR) * length;
   MessageData * msg = (MessageData *)malloc(size);
+  if (!msg) MISC_EXCEPT("Error allocating memory for message data. ");
   msg->size = size;
   msg->process_id = process_id;
   _tcscpy(msg->cmd_line, cmd_line);
@@ -269,6 +270,7 @@ DWORD exception_filter(const tstring & exe_dir,
   //   sufficiently to make a crash dump useless
   __try {
     return do_exception_filter(exe_dir, eps, message);
+  #pragma warning(suppress: 6320)
   } __except(EXCEPTION_EXECUTE_HANDLER) {
     return EXCEPTION_CONTINUE_SEARCH;
   }

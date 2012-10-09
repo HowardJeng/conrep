@@ -46,7 +46,7 @@ namespace console {
       void do_construct1(Settings & settings);
       void do_construct2(Settings & settings);
         
-      void get_console_info(CharInfoBuffer & buffer, COORD & cursor_pos);
+      void get_console_info(const Dimension & console_dim, CharInfoBuffer & buffer, COORD & cursor_pos);
       Dimension resize(Dimension console_dim);
 
       Dimension get_console_size(void);
@@ -62,7 +62,7 @@ namespace console {
       ~ProcessLock();
 
       Dimension resize(Dimension console_dim);
-      void get_console_info(CharInfoBuffer & buffer, COORD & cursor_pos);
+      void get_console_info(const Dimension & console_dim, CharInfoBuffer & buffer, COORD & cursor_pos);
       Dimension get_console_size(void);
 
       operator bool(void) const;

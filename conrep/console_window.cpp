@@ -335,7 +335,12 @@ namespace console {
       }
         
       void on_timer(void) {
-        active_ = (GetForegroundWindow() == hWnd_);
+        ASSERT(state_ == RUNNING);
+        bool is_active = (GetForegroundWindow() == hWnd_);
+        if (is_active != active_) {
+          active_ = is_active;
+          text_renderer_.invalidate();
+        }
         if (ProcessLock pl = shell_process_) {
           update_console_size(pl);
           update_scrollbar();
@@ -385,8 +390,12 @@ namespace console {
       }
 
       void on_activate(void) {
-        active_ = (GetForegroundWindow() == hWnd_);
-        invalidate_self();
+        bool is_active = (GetForegroundWindow() == hWnd_);
+        if (is_active != active_) {
+          active_ = is_active;
+          text_renderer_.invalidate();
+          invalidate_self();
+        }
       }
         
       void move_window(int x, int y) {
@@ -401,6 +410,7 @@ namespace console {
       }
         
       void on_workarea_change(void) {
+        ASSERT(state_ == RUNNING);
         int new_scrollbar_width = GetSystemMetrics(SM_CXVSCROLL);
             
         if (maximize_) {
@@ -479,6 +489,7 @@ namespace console {
       }
         
       void change_font(void) {
+        ASSERT(state_ == RUNNING);
         if (text_renderer_.choose_font(device_, hWnd_)) {
           state_ = RESETTING;
           if (maximize_) {

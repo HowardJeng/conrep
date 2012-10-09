@@ -13,6 +13,8 @@
 #include <boost/program_options.hpp>
 #pragma warning(pop)
 
+#include "exception.h"
+
 using namespace boost::program_options;
 
 namespace console {
@@ -80,7 +82,7 @@ namespace console {
 
     if (vm.count("help")) {      
       if (AttachConsole(process_id)) {
-        freopen("CONOUT$", "w", stdout);
+        if (!freopen("CONOUT$", "w", stdout)) MISC_EXCEPT("Error opening console output. ");
         std::cout << cmd_line_options << std::endl;
         FreeConsole();
       }

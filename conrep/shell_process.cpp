@@ -7,6 +7,7 @@
 #include "atl.h"
 #include "char_info_buffer.h"
 #include "dimension.h"
+#include "dimension_ops.h"
 #include "exception.h"
 #include "settings.h"
 
@@ -178,7 +179,7 @@ namespace console {
     return console_dim;
   }
     
-  void ShellProcess::get_console_info(CharInfoBuffer & buffer, COORD & cursor_pos) {
+  void ShellProcess::get_console_info(const Dimension & console_dim, CharInfoBuffer & buffer, COORD & cursor_pos) {
     ASSERT(attach_count_);
     
     CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -188,7 +189,11 @@ namespace console {
     COORD origin = {};
 
     size_t required_size = size.X * size.Y;
-    buffer.resize(Dimension(size.X, size.Y));
+
+    Dimension size_dim = Dimension(size.X, size.Y);
+    if (size_dim != console_dim) {
+      buffer.resize(size_dim);
+    }
       
     // ReadConsoleOutput() can only read 64K at a time
     if (required_size * sizeof(CHAR_INFO) < 64 * 1024) {
@@ -246,9 +251,9 @@ namespace console {
     ASSERT(attached_);
     return shell_process_.resize(console_dim);
   }
-  void ProcessLock::get_console_info(CharInfoBuffer & buffer, COORD & cursor_pos) {
+  void ProcessLock::get_console_info(const Dimension & console_dim, CharInfoBuffer & buffer, COORD & cursor_pos) {
     ASSERT(attached_);
-    shell_process_.get_console_info(buffer, cursor_pos);
+    shell_process_.get_console_info(console_dim, buffer, cursor_pos);
   }
       
   Dimension ProcessLock::get_console_size(void) {

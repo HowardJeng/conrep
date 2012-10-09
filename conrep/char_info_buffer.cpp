@@ -5,9 +5,13 @@
 namespace console {
   CharInfoBuffer::CharInfoBuffer() : size_(0), cache_valid_(false) {}
 
+  void CharInfoBuffer::invalidate(void) {
+    cache_valid_ = false;
+  }
+
   void CharInfoBuffer::resize(Dimension new_size) {
     size_ = new_size.height * new_size.width;
-    cache_valid_ = false;
+    invalidate();
     ASSERT(buffer_.size() == cache_.size());
     if (size_ > buffer_.size()) {
       buffer_.reserve(size_);
