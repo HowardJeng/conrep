@@ -54,6 +54,21 @@ namespace console {
     ASSERT(settings.inactive_pre_alpha <= std::numeric_limits<unsigned char>::max());
   }
 
+  void TextRenderer::adjust(const Settings & settings) {
+    invalidate();
+    if (settings.scl_gutter_size) gutter_size_ = settings.gutter_size;
+    if (settings.scl_extended_chars) extended_chars_ = settings.extended_chars;
+    if (settings.scl_intensify) intensify_ = settings.intensify;
+    if (settings.scl_active_pre_alpha) {
+      ASSERT(settings.active_pre_alpha <= std::numeric_limits<unsigned char>::max());
+      active_pre_alpha_ = static_cast<unsigned char>(settings.active_pre_alpha);
+    }
+    if (settings.scl_inactive_pre_alpha) {
+      ASSERT(settings.inactive_pre_alpha <= std::numeric_limits<unsigned char>::max());
+      inactive_pre_alpha_ = static_cast<unsigned char>(settings.inactive_pre_alpha);
+    }
+  }
+
   void TextRenderer::toggle_extended_chars(void) {
     extended_chars_ = !extended_chars_;
     char_info_buffer_.invalidate();

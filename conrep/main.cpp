@@ -104,13 +104,14 @@ const TCHAR MUTEX_NAME[] = _T("Local\\conrep{7c1123af-2ffe-41e7-aebd-da66f803aca
 const TCHAR MMAP_NAME[]  = _T("Local\\conrep{4b581c5e-5f5a-4fb7-b185-1252cea83d92}");
 
 
-MsgDataPtr get_message_data(DWORD process_id, const TCHAR * cmd_line) {
+MsgDataPtr get_message_data(bool adjust, const TCHAR * cmd_line) {
   size_t length = _tcslen(cmd_line);
   size_t size = sizeof(MessageData) + sizeof(TCHAR) * length;
   MessageData * msg = (MessageData *)malloc(size);
   if (!msg) MISC_EXCEPT("Error allocating memory for message data. ");
   msg->size = size;
-  msg->process_id = process_id;
+  msg->console_window = NULL;
+  msg->adjust = adjust;
   _tcscpy(msg->cmd_line, cmd_line);
   return MsgDataPtr(msg, &free);
 }
@@ -123,6 +124,17 @@ int do_winmain1(HINSTANCE hInstance,
                 int,
                 const tstring & exe_dir,
                 bool & execute_filter) {
+  CommandLineOptions opt(lpCmdLine);
+  if (opt.help) {
+    BOOL r = AttachConsole(ATTACH_PARENT_PROCESS);
+    if (r) {
+      if (!freopen("CONOUT$", "w", stdout)) MISC_EXCEPT("Error opening console output. ");
+      print_help();
+      if (!FreeConsole()) WIN_EXCEPT("Failed call to FreeConsole(). ");
+    }
+    return 0;
+  }
+
   // Use a mutex object to ensure only one instance of the application is active
   //   at a time; this allows different console windows to share resources like
   //   background textures
@@ -147,16 +159,24 @@ int do_winmain1(HINSTANCE hInstance,
       //   try reading the HWND value before it is set. Fortunately the shared memory
       //   area is guaranteed to be zeroed, and zero isn't a valid HWND value.
       if (hwnd != 0) {
-        MsgDataPtr msg_data = get_message_data(GetCurrentProcessId(), lpCmdLine);
+        MsgDataPtr msg_data = get_message_data(opt.adjust, lpCmdLine);
         COPYDATASTRUCT cds = {
           0,
           static_cast<DWORD>(msg_data->size),
           &*msg_data
         };
         BOOL r = AttachConsole(ATTACH_PARENT_PROCESS);
-        SendMessage(hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds));
-        std::cout << std::endl;
-        if (r) FreeConsole();
+        if (r) {
+          msg_data->console_window = GetConsoleWindow();
+          SendMessage(hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds));
+          FreeConsole();
+        } else {
+          if (opt.adjust) {
+            MessageBox(NULL, _T("There doesn't seem to be a conrep window to adjust"), _T("conrep error"), MB_OK);
+          } else {
+            SendMessage(hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds));
+          }
+        }
         return 0;
       } else {
         DWORD ret_val = WaitForSingleObject(mutex, 100);
@@ -179,11 +199,16 @@ int do_winmain1(HINSTANCE hInstance,
     }
   }
 
+  if (opt.adjust) {
+    MessageBox(NULL, _T("No existing conrep window to adjust."), _T("conrep error"), MB_OK);
+    return 0;
+  }
+
   GDIPlusInit gdi_initializer;
   COMInit com_initializer;
   
   std::auto_ptr<IRootWindow> root_window(get_root_window(hInstance, exe_dir));
-  Settings settings(ATTACH_PARENT_PROCESS, lpCmdLine, exe_dir.c_str());
+  Settings settings(lpCmdLine, exe_dir.c_str());
   execute_filter = settings.execute_filter;
 
   if (!root_window->spawn_window(settings)) return 0;

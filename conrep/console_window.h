@@ -21,6 +21,8 @@ namespace console {
 
   struct __declspec(novtable) IConsoleWindow {
     virtual HWND get_hwnd(void) const = 0;
+    virtual HWND get_console_hwnd(void) const = 0;
+
     virtual void dispose_resources(void) = 0;
     virtual void restore_resources(void) = 0;
     virtual WindowState get_state(void) const = 0; // for debugging

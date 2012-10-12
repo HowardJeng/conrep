@@ -15,6 +15,7 @@ namespace console {
     public:
       TextRenderer(RootPtr & root, const Settings & settings);
 
+      void adjust(const Settings & settings);
       bool choose_font(DevicePtr & device, HWND hWnd);
       Dimension console_dim_from_window_size(Dimension window_dim, INT scrollbar_width, DWORD style);
       void create_texture(RootPtr & root, Dimension client_dim);

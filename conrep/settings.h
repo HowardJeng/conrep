@@ -12,9 +12,19 @@ namespace console {
     Z_NORMAL
   };
 
+  void print_help(void);
+
+  struct CommandLineOptions {
+    CommandLineOptions(LPCTSTR command_line);
+
+    bool help;
+    bool adjust;
+  };
+
   struct Settings {
-    Settings(DWORD process_id, LPCTSTR command_line, LPCTSTR exe_directory);
-    
+    Settings(LPCTSTR command_line);
+    Settings(LPCTSTR command_line, LPCTSTR exe_directory);
+  
     bool run_app;
     
     tstring shell;
@@ -40,6 +50,26 @@ namespace console {
     unsigned int active_post_alpha;
     unsigned int inactive_pre_alpha;
     unsigned int inactive_post_alpha;
+
+    bool scl_font_name;
+    bool scl_font_size;
+    
+    bool scl_rows;
+    bool scl_columns;
+    bool scl_maximize;
+    
+    bool scl_snap_distance;
+    bool scl_gutter_size;
+    
+    bool scl_extended_chars;
+    bool scl_intensify;
+
+    bool scl_active_pre_alpha;
+    bool scl_active_post_alpha;
+    bool scl_inactive_pre_alpha;
+    bool scl_inactive_post_alpha;
+
+    bool scl_z_order;
   };
 }
 

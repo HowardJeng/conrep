@@ -13,6 +13,7 @@
 #include "exception.h"
 #include "message.h"
 #include "resource.h"
+#include "root_window.h"
 #include "settings.h"
 #include "shell_process.h"
 #include "text_renderer.h"
@@ -152,6 +153,10 @@ namespace console {
         
       HWND get_hwnd(void) const {
         return hWnd_;
+      }
+
+      HWND get_console_hwnd(void) const {
+        return shell_process_.window_handle();
       }
 
       WindowState get_state(void) const {
@@ -585,6 +590,25 @@ namespace console {
         if (!InvalidateRect(hWnd_, 0, FALSE)) WIN_EXCEPT("Failed call to InvalidateRect(). ");
       }
 
+      void on_adjust(MessageData * msg_data) {
+        Settings settings(msg_data->cmd_line);
+        state_ = RESETTING;
+        text_renderer_.adjust(settings);
+        if (maximize_) {
+          text_renderer_.size_to_work_area(work_area_, scrollbar_width_, WINDOW_STYLE);
+          if (ProcessLock pl = shell_process_) {
+            text_renderer_.resize_process(pl);
+          } else {
+            CLOSE_SELF();
+          }
+        } else {
+          Dimension new_client_dim = text_renderer_.get_client_size();
+          Dimension new_window_dim = calc_window_size(new_client_dim, scrollbar_width_, WINDOW_STYLE);
+          resize_window(new_client_dim, new_window_dim);
+        }
+        state_ = RUNNING;
+      }
+
       LRESULT ActualWndProc(UINT Msg, WPARAM wParam, LPARAM lParam) {
         switch (Msg) {
           case CRM_BACKGROUND_CHANGE:
@@ -592,6 +616,12 @@ namespace console {
             break;
           case CRM_WORKAREA_CHANGE:
             on_workarea_change();
+            break;
+          case CRM_ADJUST_WINDOW:
+            { MessageData * msg_data = reinterpret_cast<MessageData *>(lParam);
+              ASSERT(msg_data);
+              on_adjust(msg_data);
+            }
             break;
           case WM_ACTIVATE:
             on_activate();

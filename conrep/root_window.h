@@ -13,8 +13,9 @@ namespace console {
   #pragma warning(disable : 4200)
   struct MessageData {
     size_t size;
-    DWORD process_id;
-    TCHAR cmd_line[];
+    HWND   console_window;
+    bool   adjust;
+    TCHAR  cmd_line[];
   };
   #pragma warning(pop)
   typedef std::unique_ptr<MessageData, void (*)(void *)> MsgDataPtr;

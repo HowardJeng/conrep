@@ -187,7 +187,7 @@ namespace console {
 
   bool RootWindow::spawn_window(const MessageData & message_data) {
     try {
-      Settings settings(message_data.process_id, message_data.cmd_line, exe_dir_.c_str());
+      Settings settings(message_data.cmd_line, exe_dir_.c_str());
       return spawn_window(settings);
     } catch (std::exception & e) {
       tstringstream sstr;
@@ -240,7 +240,18 @@ namespace console {
       case WM_COPYDATA:
         { COPYDATASTRUCT * cbs = reinterpret_cast<COPYDATASTRUCT *>(lParam);
           MessageData * msg_data = reinterpret_cast<MessageData *>(cbs->lpData);
-          spawn_window(*msg_data);
+          if (msg_data->adjust) {
+            for (WindowMap::iterator itr = window_map_.begin(); itr != window_map_.end(); ++itr) {
+              if (itr->second->get_console_hwnd() == msg_data->console_window) {
+                // do not use PostMessage() as the COPYDATASTRUCT will be freed when this function returns
+                SendMessage(itr->second->get_hwnd(), CRM_ADJUST_WINDOW, 0, reinterpret_cast<LPARAM>(msg_data));
+                return TRUE;
+              }
+            }
+            MessageBox(NULL, _T("There doesn't seem to be a conrep window to adjust"), _T("conrep error"), MB_OK);
+          } else {
+            spawn_window(*msg_data);
+          }
           return TRUE;
         }
         break;
