@@ -19,6 +19,7 @@ namespace console {
   
   // Uses GDI+ to fill the LOGFONT structure. This is computationally expensive
   //   but easy to get right. However it doesn't handle some fonts like Terminal.
+  //   font_size is in units of tenths of point size. i.e. 100 is a 10 point font
   bool get_logfont(const tstring & font_name, int font_size, LOGFONT * lf) {
     Bitmap b(1, 1);
     Graphics g(&b);
@@ -27,7 +28,7 @@ namespace console {
     const FontFamily * ff = &font_family;
     if (!font_family.IsAvailable()) 
       return false;
-    Gdiplus::Font font(ff, static_cast<REAL>(font_size));
+    Gdiplus::Font font(ff, static_cast<REAL>(font_size) / POINT_SIZE_SCALE);
     if (!font.IsAvailable()) 
       return false;
       
@@ -93,6 +94,7 @@ namespace console {
     return font;
   }
 
+  // font_size is in units of tenths of point size. i.e. 100 is a 10 point font
   FontPtr create_font(DevicePtr device, const tstring & font_name, int font_size) {
     HDC dc = GetDC(NULL);
     if (!dc) WIN_EXCEPT("Failed call to GetDC(NULL).");
@@ -110,7 +112,7 @@ namespace console {
       if (get_logfont(font_name, font_size, &lf))
         return create_font(device, lf);
       hr = D3DXCreateFont(device,
-                          -MulDiv(font_size, log_pixels_y, 72),
+                          -MulDiv(font_size, log_pixels_y, 72 * POINT_SIZE_SCALE),
                           0,
                           FW_NORMAL,
                           D3DX_DEFAULT,
@@ -127,7 +129,7 @@ namespace console {
       sstr << _T("Unable to use the font ") << font_name << ".";
       MessageBox(NULL, sstr.str().c_str(), _T("Font error"), MB_OK);
       hr = D3DXCreateFont(device,
-                          -MulDiv(font_size, log_pixels_y, 72),
+                          -MulDiv(font_size, log_pixels_y, 72 * POINT_SIZE_SCALE),
                           0,
                           FW_NORMAL,
                           D3DX_DEFAULT,

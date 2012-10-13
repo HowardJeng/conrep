@@ -40,7 +40,7 @@ namespace console {
 
   TextRenderer::TextRenderer(RootPtr & root, const Settings & settings)
     : white_texture_(root->white_texture()),
-      font_(create_font(root->device(), settings.font_name, settings.font_size)),
+      font_(create_font(root->device(), settings.font_name, settings.font_size * POINT_SIZE_SCALE)),
       char_dim_(console::get_char_dim(font_)),
       console_dim_(Dimension(settings.columns, settings.rows)),
       gutter_size_(settings.gutter_size),
