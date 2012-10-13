@@ -60,10 +60,10 @@ namespace console {
         "arguments to pass to shell" )
       ( "font_name", 
         tvalue(s ? &(s->font_name) : nullptr)->DEFAULT_VALUE("Courier New"), 
-        "name of font to use" )
+        "* name of font to use" )
       ( "font_size", 
         tvalue(s ? &(s->font_size) : nullptr)->default_value(10), 
-        "size of font to use" )
+        "* size of font to use" )
       ( "rows", 
         tvalue(s ? &(s->rows) : nullptr)->default_value(24), 
         "number of rows" )
@@ -75,34 +75,34 @@ namespace console {
         "fill the working area" )
       ( "extended_chars", 
         tvalue<tstring>()->DEFAULT_VALUE("false"), 
-        "use extended characters" )
+        "* use extended characters" )
       ( "intensify", 
         tvalue<tstring>()->DEFAULT_VALUE("false"), 
-        "intensify foreground colors" )
+        "* intensify foreground colors" )
       ( "execute_filter", 
         tvalue<tstring>()->DEFAULT_VALUE("true"), 
         "execute stack trace filter" )
       ( "snap_distance", 
         tvalue(s ? &(s->snap_distance) : nullptr)->default_value(10), 
-        "distance to snap to work area" )
+        "* distance to snap to work area" )
       ( "gutter_size", 
         tvalue(s ? &(s->gutter_size) : nullptr)->default_value(2), 
-        "size of inside border" )
+        "* size of inside border" )
       ( "z_order", 
         tvalue<tstring>()->DEFAULT_VALUE("normal"), 
-        "z order [top, bottom, normal]" )
+        "* z order [top, bottom, normal]" )
       ( "active_pre_alpha", 
         tvalue(s ? &(s->active_pre_alpha) : nullptr)->default_value(0xA0), 
-        "pre-multiply alpha for active window" )
+        "* pre-multiply alpha for active window" )
       ( "active_post_alpha", 
         tvalue(s ? &(s->active_post_alpha) : nullptr)->default_value(0xFF), 
-        "post-multiply alpha for active window" )
+        "* post-multiply alpha for active window" )
       ( "inactive_pre_alpha", 
         tvalue(s ? &(s->inactive_pre_alpha) : nullptr)->default_value(0xD0), 
-        "pre-multiply alpha for inactive window" )
+        "* pre-multiply alpha for inactive window" )
       ( "inactive_post_alpha", 
         tvalue(s ? &(s->inactive_post_alpha) : nullptr)->default_value(0x50), 
-        "post-multiply alpha for inactive window" )
+        "* post-multiply alpha for inactive window" )
     ;
     opt.add(both_desc);
   }
@@ -112,6 +112,7 @@ namespace console {
     add_cmd_line_options(cmd_line_desc, nullptr);
     add_both_options(cmd_line_desc, nullptr);
     std::cout << cmd_line_desc << std::endl;
+    std::cout << "* settings that can be adjusted with --adjust" << std::endl;
   }
 
   CommandLineOptions::CommandLineOptions(LPCTSTR command_line) 
@@ -185,6 +186,8 @@ namespace console {
                                                          std::numeric_limits<unsigned char>::max());
     settings.inactive_post_alpha = std::min<unsigned int>(settings.inactive_post_alpha, 
                                                           std::numeric_limits<unsigned char>::max());
+
+    if (settings.snap_distance < 0) settings.snap_distance = 0;
   }
 
   Settings::Settings(LPCTSTR command_line)

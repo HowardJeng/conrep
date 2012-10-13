@@ -599,6 +599,15 @@ namespace console {
         Settings settings(msg_data->cmd_line);
 
         if (settings.scl_z_order) set_z_order(settings.z_order);
+        if (settings.scl_snap_distance) snap_distance_ = settings.snap_distance;
+        if (settings.scl_active_post_alpha) {
+          ASSERT(settings.active_post_alpha <= std::numeric_limits<unsigned char>::max());
+          active_post_alpha_ = static_cast<unsigned char>(settings.active_post_alpha);
+        }
+        if (settings.scl_inactive_post_alpha) {
+          ASSERT(settings.inactive_post_alpha <= std::numeric_limits<unsigned char>::max());
+          inactive_post_alpha_ = static_cast<unsigned char>(settings.inactive_post_alpha);
+        }
 
         state_ = RESETTING;
         text_renderer_.adjust(device_, settings);
