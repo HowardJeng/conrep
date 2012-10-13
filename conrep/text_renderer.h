@@ -15,7 +15,7 @@ namespace console {
     public:
       TextRenderer(RootPtr & root, const Settings & settings);
 
-      void adjust(const Settings & settings);
+      void adjust(const DevicePtr & device, const Settings & settings);
       bool choose_font(DevicePtr & device, HWND hWnd);
       Dimension console_dim_from_window_size(Dimension window_dim, INT scrollbar_width, DWORD style);
       void create_texture(RootPtr & root, Dimension client_dim);
@@ -53,6 +53,8 @@ namespace console {
 
       unsigned char active_pre_alpha_;
       unsigned char inactive_pre_alpha_;
+
+      int font_size_; // in units of POINT_SIZE_SCALE of a point
 
       TextRenderer(const TextRenderer &);
       TextRenderer & operator=(const TextRenderer &);

@@ -593,7 +593,7 @@ namespace console {
       void on_adjust(MessageData * msg_data) {
         Settings settings(msg_data->cmd_line);
         state_ = RESETTING;
-        text_renderer_.adjust(settings);
+        text_renderer_.adjust(device_, settings);
         if (maximize_) {
           text_renderer_.size_to_work_area(work_area_, scrollbar_width_, WINDOW_STYLE);
           if (ProcessLock pl = shell_process_) {

@@ -47,15 +47,29 @@ namespace console {
       extended_chars_(settings.extended_chars),
       intensify_(settings.intensify),
       active_pre_alpha_(static_cast<unsigned char>(settings.active_pre_alpha)),
-      inactive_pre_alpha_(static_cast<unsigned char>(settings.inactive_pre_alpha))
+      inactive_pre_alpha_(static_cast<unsigned char>(settings.inactive_pre_alpha)),
+      font_size_(settings.font_size * POINT_SIZE_SCALE)
   {
     get_logfont(font_, &lf_);
     ASSERT(settings.active_pre_alpha <= std::numeric_limits<unsigned char>::max());
     ASSERT(settings.inactive_pre_alpha <= std::numeric_limits<unsigned char>::max());
   }
 
-  void TextRenderer::adjust(const Settings & settings) {
+  void TextRenderer::adjust(const DevicePtr & device, const Settings & settings) {
     invalidate();
+    if (settings.scl_font_name || settings.scl_font_size) {
+      if (settings.scl_font_size) {
+        font_size_ = settings.font_size * POINT_SIZE_SCALE;
+      }
+      if (settings.scl_font_name) {
+        font_ = create_font(device, settings.font_name, font_size_);
+      } else {
+        font_ = create_font(device, lf_.lfFaceName, font_size_);
+      }
+      get_logfont(font_, &lf_);
+      char_dim_ = console::get_char_dim(font_);
+    }
+
     if (settings.scl_gutter_size) gutter_size_ = settings.gutter_size;
     if (settings.scl_extended_chars) extended_chars_ = settings.extended_chars;
     if (settings.scl_intensify) intensify_ = settings.intensify;
@@ -108,6 +122,7 @@ namespace console {
       font_ = create_font(device, lf);
       lf_ = lf;
       char_dim_ = console::get_char_dim(font_);
+      font_size_ = cf.iPointSize;
       return true;
     }
     return false;
