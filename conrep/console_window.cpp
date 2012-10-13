@@ -43,7 +43,6 @@ namespace console {
           white_texture_(root->white_texture()),
           menu_(get_context_menu(hInstance)),
           work_area_(get_work_area()),
-          z_order_(settings.z_order),
           text_renderer_(root, settings),
           active_post_alpha_(static_cast<unsigned char>(settings.active_post_alpha)),
           inactive_post_alpha_(static_cast<unsigned char>(settings.inactive_post_alpha))
@@ -94,14 +93,7 @@ namespace console {
         ShowWindow(hWnd_, SW_SHOW); // no error checks as either return is legitimate
           
         try {
-          switch (z_order_) {
-            case Z_TOP:
-              set_z_top(hWnd_);
-              break;
-            case Z_BOTTOM:
-              set_z_bottom(hWnd_);
-              break;
-          }
+          set_z_order(settings.z_order);
 
           // Direct3D stuff
           if (maximize_) {
@@ -567,20 +559,16 @@ namespace console {
             break;
           case ID_ALWAYSONTOP:
             if (z_order_ == Z_TOP) {
-              z_order_ = Z_NORMAL;
-              set_z_normal(hWnd_);
+              set_z_order(Z_NORMAL);
             } else {
-              z_order_ = Z_TOP;
-              set_z_top(hWnd_);
+              set_z_order(Z_TOP);
             }
             break;
           case ID_ALWAYSONBOTTOM:
             if (z_order_ == Z_BOTTOM) {
-              z_order_ = Z_NORMAL;
-              set_z_normal(hWnd_);
+              set_z_order(Z_NORMAL);
             } else {
-              z_order_ = Z_BOTTOM;
-              set_z_bottom(hWnd_);
+              set_z_order(Z_BOTTOM);
             }
             break;
         }
@@ -590,8 +578,28 @@ namespace console {
         if (!InvalidateRect(hWnd_, 0, FALSE)) WIN_EXCEPT("Failed call to InvalidateRect(). ");
       }
 
+      void set_z_order(ZOrder z_order) {
+        z_order_ = z_order;
+        switch (z_order) {
+          case Z_BOTTOM:
+            set_z_bottom(hWnd_);
+            return;
+          case Z_NORMAL:
+            set_z_normal(hWnd_);
+            return;
+          case Z_TOP:
+            set_z_top(hWnd_);
+            return;
+          default:
+            ASSERT(false);
+        }
+      }
+
       void on_adjust(MessageData * msg_data) {
         Settings settings(msg_data->cmd_line);
+
+        if (settings.scl_z_order) set_z_order(settings.z_order);
+
         state_ = RESETTING;
         text_renderer_.adjust(device_, settings);
         if (maximize_) {
