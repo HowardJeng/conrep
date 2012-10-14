@@ -24,9 +24,11 @@ namespace console {
   #ifdef UNICODE
     #define tvalue wvalue
     #define DEFAULT_VALUE(x) default_value(_T(x), x)
+    #define IMPLICIT_VALUE(x) implicit_value(_T(x), x)
   #else
     #define tvalue value
     #define DEFAULT_VALUE(x) default_value(x)
+    #define IMPLICIT_VALUE(x) implicit_value(x)
   #endif
 
   void toupper(tstring & var_string) {
@@ -73,17 +75,14 @@ namespace console {
         tvalue(s ? &(s->columns) : nullptr)->default_value(80), 
         "* number of columns" )
       ( "maximize", 
-        tvalue<tstring>()->DEFAULT_VALUE("false"), 
+        tvalue<tstring>()->DEFAULT_VALUE("false")->IMPLICIT_VALUE("true"), 
         "* fill the working area" )
       ( "extended_chars", 
-        tvalue<tstring>()->DEFAULT_VALUE("false"), 
+        tvalue<tstring>()->DEFAULT_VALUE("false")->IMPLICIT_VALUE("true"), 
         "* use extended characters" )
       ( "intensify", 
-        tvalue<tstring>()->DEFAULT_VALUE("false"), 
+        tvalue<tstring>()->DEFAULT_VALUE("false")->IMPLICIT_VALUE("true"), 
         "* intensify foreground colors" )
-      ( "execute_filter", 
-        tvalue<tstring>()->DEFAULT_VALUE("true"), 
-        "execute stack trace filter" )
       ( "snap_distance", 
         tvalue(s ? &(s->snap_distance) : nullptr)->default_value(10), 
         "* distance to snap to work area" )
@@ -107,6 +106,16 @@ namespace console {
         "* post-multiply alpha for inactive window" )
     ;
     opt.add(both_desc);
+  }
+
+  void add_hidden_options(options_description & opt, Settings * s) {
+    options_description hidden_desc;
+    hidden_desc.add_options()
+      ( "execute_filter", 
+        tvalue<tstring>()->DEFAULT_VALUE("true")->IMPLICIT_VALUE("true"), 
+        "execute stack trace filter" )
+    ;
+    opt.add(hidden_desc);
   }
 
   void print_help(void) {
@@ -139,6 +148,7 @@ namespace console {
 
     add_cmd_line_options(cmd_line_desc, config_file_name);
     add_both_options(cmd_line_desc, &settings);
+    add_hidden_options(cmd_line_desc, &settings);
 
     store(basic_command_line_parser<TCHAR>(args).options(cmd_line_desc).allow_unregistered().run(), vm);
     vm.notify();
@@ -217,6 +227,7 @@ namespace console {
 
     options_description both_desc;
     add_both_options(both_desc, this);
+    add_hidden_options(both_desc, this);
 
     std::ifstream ifs(config_file_name.c_str());
     store(parse_config_file(ifs, both_desc), vm);
