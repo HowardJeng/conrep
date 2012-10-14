@@ -154,8 +154,8 @@ namespace console {
       
     COORD max_size = GetLargestConsoleWindowSize(stdout_handle_);
     if (!max_size.X && !max_size.Y) WIN_EXCEPT("Failed call to GetLargestConsoleWindowSize(). ");
-    if (console_dim.width  > max_size.X) console_dim.width  = max_size.X;
-    if (console_dim.height > max_size.Y) console_dim.height = max_size.Y;
+    if ((console_dim.width  > max_size.X) || (console_dim.width < 0)) console_dim.width  = max_size.X;
+    if ((console_dim.height > max_size.Y) || (console_dim.height < 0)) console_dim.height = max_size.Y;
     int new_height = std::max<int>(console_dim.height, csbi.dwSize.Y);
 
     COORD buffer_size = { static_cast<short>(console_dim.width), 

@@ -27,10 +27,7 @@ namespace console {
       void recreate_font(DevicePtr & device);
       void render(SpritePtr & sprite, D3DCOLOR color);
       void resize_buffers(Dimension new_console_dim);
-      void resize_process(ProcessLock & pl);
       void set_menu_options(MenuPtr & menu);
-      void size_to_window_dim(Dimension window_dim, INT scrollbar_width, DWORD style);
-      void size_to_work_area(RECT work_area, INT scrollbar_width, DWORD style);
       void toggle_extended_chars(void);
       void update_text_buffer(ProcessLock & pl, RootPtr & root, SpritePtr & sprite, bool active);
     private:

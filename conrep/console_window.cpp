@@ -65,7 +65,7 @@ namespace console {
 
         if ((console_dim.height != settings.rows) || (console_dim.width  != settings.columns)) {
           if (ProcessLock pl = shell_process_) {
-            text_renderer_.resize_buffers(pl.resize(console_dim));
+            resize_console(Dimension(console_dim), pl);
           } else {
             MISC_EXCEPT("Shell process terminated before window was created.");
           }
@@ -218,6 +218,10 @@ namespace console {
       unsigned char active_post_alpha_;
       unsigned char inactive_post_alpha_;
     private:
+      void resize_console(Dimension console_dim, ProcessLock & pl) {
+        text_renderer_.resize_buffers(pl.resize(console_dim));
+      }
+
       BOOL on_create(void) {
         ASSERT(state_ == INITIALIZING);
 
@@ -429,15 +433,17 @@ namespace console {
           Dimension new_window_dim = get_max_window_dim(info.rcWork);
           work_area_ = info.rcWork;
           POINT p = { work_area_.left, work_area_.top };
-            
+          
           if ((old_window_dim != new_window_dim) || (new_scrollbar_width != scrollbar_width_)) {
             scrollbar_width_ = new_scrollbar_width;
             resize_window(get_client_dim(new_window_dim, scrollbar_width_, WINDOW_STYLE), new_window_dim);
-            text_renderer_.size_to_window_dim(new_window_dim, scrollbar_width_, WINDOW_STYLE);
           }
+          Dimension console_dim = text_renderer_.console_dim_from_window_size(new_window_dim,
+                                                                              scrollbar_width_,
+                                                                              WINDOW_STYLE);
           move_window(p.x, p.y);
           if (ProcessLock pl = shell_process_) {
-            text_renderer_.resize_process(pl);
+            resize_console(console_dim, pl);
             state_ = RUNNING;
             update_text_buffer(pl);
           } else {
@@ -497,9 +503,11 @@ namespace console {
         if (text_renderer_.choose_font(device_, hWnd_)) {
           state_ = RESETTING;
           if (maximize_) {
-            text_renderer_.size_to_work_area(work_area_, scrollbar_width_, WINDOW_STYLE);
+            Dimension window_dim = get_max_window_dim(work_area_);
+            Dimension console_dim = text_renderer_.console_dim_from_window_size(window_dim, scrollbar_width_, WINDOW_STYLE);
+
             if (ProcessLock pl = shell_process_) {
-              text_renderer_.resize_process(pl);
+              resize_console(console_dim, pl);
             } else {
               CLOSE_SELF();
             }
@@ -610,15 +618,41 @@ namespace console {
         }
 
         state_ = RESETTING;
+        if (settings.scl_maximize) {
+          maximize_ = settings.maximize;
+          if (maximize_) {
+            HMONITOR mon = MonitorFromWindow(hWnd_, MONITOR_DEFAULTTOPRIMARY);
+            MONITORINFO info = { sizeof(MONITORINFO) };
+            if (!GetMonitorInfo(mon, &info)) WIN_EXCEPT("Error in GetMonitorInfo() call. ");
+
+            Dimension new_window_dim = get_max_window_dim(info.rcWork);
+            work_area_ = info.rcWork;
+            POINT p = { work_area_.left, work_area_.top };
+          
+            resize_window(get_client_dim(new_window_dim, scrollbar_width_, WINDOW_STYLE), new_window_dim);
+            move_window(p.x, p.y);
+          }
+        }
+
         text_renderer_.adjust(device_, settings);
         if (maximize_) {
-          text_renderer_.size_to_work_area(work_area_, scrollbar_width_, WINDOW_STYLE);
+          Dimension window_dim = get_max_window_dim(work_area_);
+          Dimension console_dim = text_renderer_.console_dim_from_window_size(window_dim, scrollbar_width_, WINDOW_STYLE);
+
           if (ProcessLock pl = shell_process_) {
-            text_renderer_.resize_process(pl);
+            resize_console(console_dim, pl);
           } else {
             CLOSE_SELF();
           }
         } else {
+          if (settings.scl_maximize || settings.scl_columns || settings.scl_rows) {
+            if (ProcessLock pl = shell_process_) {
+              resize_console(Dimension(settings.columns, settings.rows), pl);
+            } else {
+              CLOSE_SELF();
+            }
+          }
+
           Dimension new_client_dim = text_renderer_.get_client_size();
           Dimension new_window_dim = calc_window_size(new_client_dim, scrollbar_width_, WINDOW_STYLE);
           resize_window(new_client_dim, new_window_dim);

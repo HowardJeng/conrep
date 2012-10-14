@@ -93,19 +93,6 @@ namespace console {
     return usable / char_dim_;
   }
 
-  void TextRenderer::size_to_window_dim(Dimension window_dim, INT scrollbar_width, DWORD style) {
-    resize_buffers(console_dim_from_window_size(window_dim, scrollbar_width, style));
-  }
-
-  void TextRenderer::size_to_work_area(RECT work_area, INT scrollbar_width, DWORD style) {
-    Dimension window_dim = get_max_window_dim(work_area);
-    size_to_window_dim(window_dim, scrollbar_width, style);
-  }
-
-  void TextRenderer::resize_process(ProcessLock & pl) {
-    resize_buffers(pl.resize(console_dim_));
-  }
-
   bool TextRenderer::choose_font(DevicePtr & device, HWND hWnd) {
     LOGFONT lf = lf_;
           

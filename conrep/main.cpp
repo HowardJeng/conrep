@@ -21,6 +21,24 @@ using namespace ATL;
 using namespace Gdiplus;
 using namespace console;
 
+// disables silent swalling on SEH exceptions in callbacks
+void disable_process_callback_filter(void) {
+  typedef BOOL (WINAPI *GetPolicyPtr)(LPDWORD lpFlags); 
+  typedef BOOL (WINAPI *SetPolicyPtr)(DWORD dwFlags); 
+  const DWORD PROCESS_CALLBACK_FILTER_ENABLED = 0x1;
+
+  HMODULE kernel32 = LoadLibraryA("kernel32.dll");
+  GetPolicyPtr get_policy = (GetPolicyPtr)GetProcAddress(kernel32, "GetProcessUserModeExceptionPolicy"); 
+  if (!get_policy) return;
+  SetPolicyPtr set_policy = (SetPolicyPtr)GetProcAddress(kernel32, "SetProcessUserModeExceptionPolicy"); 
+  if (!set_policy) return;
+
+  DWORD flags; 
+  if (get_policy(&flags)) { 
+    set_policy(flags & ~PROCESS_CALLBACK_FILTER_ENABLED); 
+  } 
+}
+
 // RAII initializer for GDI+
 class GDIPlusInit { 
   public:
@@ -232,11 +250,8 @@ int do_winmain1(HINSTANCE hInstance,
   }
 }
 
-DWORD do_exception_filter(const tstring & exe_dir,
-                          EXCEPTION_POINTERS * eps,
-                          tstring & message) {
+void get_exception_information(std::stringstream & narrow_stream, EXCEPTION_POINTERS * eps) {
   int skip = 0;
-  std::stringstream narrow_stream;
   EXCEPTION_RECORD * er = eps->ExceptionRecord;
   switch (er->ExceptionCode) {
     case MSC_EXCEPTION_CODE: { // C++ exception
@@ -272,6 +287,14 @@ DWORD do_exception_filter(const tstring & exe_dir,
   }
   narrow_stream << "\n\nStack Trace:\n";
   generate_stack_walk(narrow_stream, *eps->ContextRecord, skip);
+
+}
+
+DWORD do_exception_filter(const tstring & exe_dir,
+                          EXCEPTION_POINTERS * eps,
+                          tstring & message) {
+  std::stringstream narrow_stream;
+  get_exception_information(narrow_stream, eps);
 
   tstringstream sstr;
   sstr << TBuffer(narrow_stream.str().c_str());
@@ -339,6 +362,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPTSTR lpCmdLine,
                      int nCmdShow) {
+  disable_process_callback_filter();
   tstring exe_dir = get_branch_from_path(get_module_path());
   SymInit sym;
   tstring message;

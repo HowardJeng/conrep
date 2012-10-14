@@ -19,6 +19,8 @@
 using namespace boost::program_options;
 
 namespace console {
+  const int MIN_COLUMNS = 40;
+
   #ifdef UNICODE
     #define tvalue wvalue
     #define DEFAULT_VALUE(x) default_value(_T(x), x)
@@ -66,13 +68,13 @@ namespace console {
         "* size of font to use" )
       ( "rows", 
         tvalue(s ? &(s->rows) : nullptr)->default_value(24), 
-        "number of rows" )
+        "* number of rows" )
       ( "columns", 
         tvalue(s ? &(s->columns) : nullptr)->default_value(80), 
-        "number of columns" )
+        "* number of columns" )
       ( "maximize", 
         tvalue<tstring>()->DEFAULT_VALUE("false"), 
-        "fill the working area" )
+        "* fill the working area" )
       ( "extended_chars", 
         tvalue<tstring>()->DEFAULT_VALUE("false"), 
         "* use extended characters" )
@@ -163,6 +165,8 @@ namespace console {
     if (settings.maximize) {
       settings.rows = -1;
       settings.columns = -1;
+    } else {
+      if (settings.columns < MIN_COLUMNS) settings.columns = MIN_COLUMNS;
     }
     settings.extended_chars = get_bool(vm, "extended_chars");
     settings.intensify = get_bool(vm, "intensify");
