@@ -19,7 +19,7 @@
 using namespace boost::program_options;
 
 namespace console {
-  const int MIN_COLUMNS = 5;
+  const int MIN_COLUMNS = 40;
 
   #ifdef UNICODE
     #define tvalue wvalue
@@ -108,7 +108,7 @@ namespace console {
     opt.add(both_desc);
   }
 
-  void add_hidden_options(options_description & opt, Settings * s) {
+  void add_hidden_options(options_description & opt) {
     options_description hidden_desc;
     hidden_desc.add_options()
       ( "execute_filter", 
@@ -148,7 +148,7 @@ namespace console {
 
     add_cmd_line_options(cmd_line_desc, config_file_name);
     add_both_options(cmd_line_desc, &settings);
-    add_hidden_options(cmd_line_desc, &settings);
+    add_hidden_options(cmd_line_desc);
 
     store(basic_command_line_parser<TCHAR>(args).options(cmd_line_desc).allow_unregistered().run(), vm);
     vm.notify();
@@ -227,7 +227,7 @@ namespace console {
 
     options_description both_desc;
     add_both_options(both_desc, this);
-    add_hidden_options(both_desc, this);
+    add_hidden_options(both_desc);
 
     std::ifstream ifs(config_file_name.c_str());
     store(parse_config_file(ifs, both_desc), vm);
