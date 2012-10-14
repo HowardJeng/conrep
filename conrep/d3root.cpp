@@ -347,10 +347,7 @@ namespace console {
         if (hr == D3DERR_INVALIDCALL) {
           sstr << _T("\nPossible cause: wallpaper is too large.");
         }
-        MessageBox(0, 
-                   sstr.str().c_str(),
-                   _T("Unable to load wallpaper."),
-                   MB_OK | MB_TASKMODAL);
+        MessageBox(0, sstr.str().c_str(), _T("Unable to load wallpaper."), MB_OK);
         //wallpaper_surface = 0;
         sbd.wallpaper_texture = 0;
       }

@@ -3,14 +3,18 @@
 
 #include "windows.h"
 #include <iosfwd>
+#include "tchar.h"
 
 const DWORD ASSERT_EXCEPTION_CODE = 0xE0417372;
 const DWORD MSC_EXCEPTION_CODE = 0xE06D7363;
+const int EXIT_ABNORMAL_TERMINATION = -10;
 
 struct ExceptionTypeInfo;
 
 namespace console {
   void generate_stack_walk(std::ostream & os, CONTEXT ctx, int skip = 0);
+  std::string get_exception_information(EXCEPTION_POINTERS & eps);
+  DWORD exception_filter(const tstring & exe_dir, EXCEPTION_POINTERS & eps, tstring & message);
 
   #ifdef _M_IX86
     struct UntypedException {

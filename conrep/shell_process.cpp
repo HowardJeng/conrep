@@ -80,9 +80,9 @@ namespace console {
       
     COORD size = GetLargestConsoleWindowSize(stdout_handle);
     if (!size.X && !size.Y) WIN_EXCEPT("Failed call to GetLargestConsoleWindowSize() ");
-    if (settings.rows == -1) settings.rows = size.Y;
+    if (settings.rows < 0) settings.rows = size.Y;
     else settings.rows = std::min<int>(size.Y, settings.rows);
-    if (settings.columns == -1) settings.columns = size.X;
+    if (settings.columns < 0) settings.columns = size.X;
     else settings.columns = std::min<int>(size.X, settings.columns);
       
     COORD buffer_size = { static_cast<short>(settings.columns), 

@@ -6,6 +6,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "windows.h"
+#include "tchar.h"
 
 namespace console {
   class IDirect3DRoot;
@@ -34,7 +35,12 @@ namespace console {
 
   struct Settings;
   
-  WindowPtr create_console_window(HWND hub, HINSTANCE hInstance, const Settings & settings, RootPtr root);
+  WindowPtr create_console_window(HWND hub, 
+                                  HINSTANCE hInstance, 
+                                  const Settings & settings, 
+                                  RootPtr root, 
+                                  const tstring & exe_dir,
+                                  tstring & message);
 }
 
 #endif

@@ -28,7 +28,7 @@ namespace console {
       virtual HWND hwnd(void) const = 0;
   };
 
-  std::auto_ptr<IRootWindow> get_root_window(HINSTANCE hInstance, const tstring & exe_dir);
+  std::auto_ptr<IRootWindow> get_root_window(HINSTANCE hInstance, const tstring & exe_dir, tstring & message);
 
 }
 

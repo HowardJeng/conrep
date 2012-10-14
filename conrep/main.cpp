@@ -28,6 +28,7 @@ void disable_process_callback_filter(void) {
   const DWORD PROCESS_CALLBACK_FILTER_ENABLED = 0x1;
 
   HMODULE kernel32 = LoadLibraryA("kernel32.dll");
+  if (!kernel32) return;
   GetPolicyPtr get_policy = (GetPolicyPtr)GetProcAddress(kernel32, "GetProcessUserModeExceptionPolicy"); 
   if (!get_policy) return;
   SetPolicyPtr set_policy = (SetPolicyPtr)GetProcAddress(kernel32, "SetProcessUserModeExceptionPolicy"); 
@@ -141,6 +142,7 @@ int do_winmain1(HINSTANCE hInstance,
                 LPTSTR lpCmdLine, 
                 int,
                 const tstring & exe_dir,
+                tstring & message,
                 bool & execute_filter) {
   CommandLineOptions opt(lpCmdLine);
   if (opt.help) {
@@ -190,7 +192,7 @@ int do_winmain1(HINSTANCE hInstance,
           FreeConsole();
         } else {
           if (opt.adjust) {
-            MessageBox(NULL, _T("There doesn't seem to be a conrep window to adjust"), _T("conrep error"), MB_OK);
+            MessageBox(NULL, _T("There doesn't seem to be an associated conrep window to adjust"), _T("--adjust error"), MB_OK);
           } else {
             SendMessage(hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds));
           }
@@ -218,14 +220,14 @@ int do_winmain1(HINSTANCE hInstance,
   }
 
   if (opt.adjust) {
-    MessageBox(NULL, _T("No existing conrep window to adjust."), _T("conrep error"), MB_OK);
+    MessageBox(NULL, _T("No existing conrep window to adjust."), _T("--adjust error"), MB_OK);
     return 0;
   }
 
   GDIPlusInit gdi_initializer;
   COMInit com_initializer;
   
-  std::auto_ptr<IRootWindow> root_window(get_root_window(hInstance, exe_dir));
+  std::auto_ptr<IRootWindow> root_window(get_root_window(hInstance, exe_dir, message));
   Settings settings(lpCmdLine, exe_dir.c_str());
   execute_filter = settings.execute_filter;
 
@@ -250,79 +252,6 @@ int do_winmain1(HINSTANCE hInstance,
   }
 }
 
-void get_exception_information(std::stringstream & narrow_stream, EXCEPTION_POINTERS * eps) {
-  int skip = 0;
-  EXCEPTION_RECORD * er = eps->ExceptionRecord;
-  switch (er->ExceptionCode) {
-    case MSC_EXCEPTION_CODE: { // C++ exception
-      UntypedException ue(*eps);
-      if (std::exception * e = exception_cast<std::exception>(ue)) {
-        narrow_stream << typeid(*e).name() << "\n" << e->what();
-      } else {
-        narrow_stream << "Unknown C++ exception thrown.\n";
-        get_exception_types(narrow_stream, ue);
-      }
-      skip = 2; // skips RaiseException() and _CxxThrowException()
-    } break;
-    case ASSERT_EXCEPTION_CODE: {
-      char * assert_message = reinterpret_cast<char *>(er->ExceptionInformation[0]);
-      narrow_stream << assert_message;
-      free(assert_message);
-      skip = 1; // skips RaiseException()
-    } break;
-    case EXCEPTION_ACCESS_VIOLATION: {
-      narrow_stream << "Access violation. Illegal "
-                    << (er->ExceptionInformation[0] ? "write" : "read")
-                    << " by "
-                    << er->ExceptionAddress
-                    << " at "
-                    << reinterpret_cast<void *>(er->ExceptionInformation[1]);
-    } break;
-    default: {
-      narrow_stream << "SEH exception thrown. Exception code: "
-                    << std::hex << std::uppercase << er->ExceptionCode
-                    << " at "
-                    << er->ExceptionAddress;
-    }
-  }
-  narrow_stream << "\n\nStack Trace:\n";
-  generate_stack_walk(narrow_stream, *eps->ContextRecord, skip);
-
-}
-
-DWORD do_exception_filter(const tstring & exe_dir,
-                          EXCEPTION_POINTERS * eps,
-                          tstring & message) {
-  std::stringstream narrow_stream;
-  get_exception_information(narrow_stream, eps);
-
-  tstringstream sstr;
-  sstr << TBuffer(narrow_stream.str().c_str());
-
-  std::ofstream error_log(NarrowBuffer((exe_dir + _T("\\err_log.txt")).c_str()));
-  if (error_log) {
-    error_log << narrow_stream.str();
-    sstr << _T("\nThis message has been written to err_log.txt");
-  }
-  
-  message = sstr.str();
-  return EXCEPTION_EXECUTE_HANDLER;
-}
-
-DWORD exception_filter(const tstring & exe_dir,
-                       EXCEPTION_POINTERS * eps,
-                       tstring & message) {
-  // in case of errors like a corrupted heap or stack or other error condition that
-  //   prevents the stack trace from being built, just dump to the operating system
-  //   exception handler and hope that the filter didn't mess up the program state
-  //   sufficiently to make a crash dump useless
-  __try {
-    return do_exception_filter(exe_dir, eps, message);
-  #pragma warning(suppress: 6320)
-  } __except(EXCEPTION_EXECUTE_HANDLER) {
-    return EXCEPTION_CONTINUE_SEARCH;
-  }
-}
 
 // SEH exception handler function. Since C++ objects that require unwind semantics
 //   aren't allowable in function with SEH __try blocks, message is created by the
@@ -335,20 +264,23 @@ int WINAPI do_winmain2(HINSTANCE hInstance,
                        tstring & message) {
   bool execute_filter = true;
   __try {
-    return do_winmain1(hInstance, hPrevInstance, lpCmdLine, nCmdShow, exe_dir, execute_filter);
+    int ret_val = do_winmain1(hInstance, hPrevInstance, lpCmdLine, nCmdShow, exe_dir, message, execute_filter);
+    if (ret_val == EXIT_ABNORMAL_TERMINATION) {
+      if (!message.empty()) {
+        MessageBox(NULL,  message.c_str(), _T("Abnormal termination"), MB_OK); 
+      }
+    }
+    return ret_val;
   // exception_flter() doesn't handle stack overflow properly, so just skip the
   //   the function and dump to the OS exception handler in that case.
   } __except( (execute_filter && (GetExceptionCode() != EXCEPTION_STACK_OVERFLOW))
-                ? exception_filter(exe_dir, GetExceptionInformation(), message)
+                ? exception_filter(exe_dir, *GetExceptionInformation(), message)
                 : EXCEPTION_CONTINUE_SEARCH
              ) {
     if (!message.empty()) {
-      MessageBox(NULL, 
-                 message.c_str(),
-                 _T("Abnormal termination"),
-                 MB_OK); 
+      MessageBox(NULL, message.c_str(), _T("Abnormal termination"), MB_OK); 
     }
-    return -1;
+    return EXIT_ABNORMAL_TERMINATION;
   }
 }
 

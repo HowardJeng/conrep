@@ -3,6 +3,9 @@
 #include <dbghelp.h>
 #include "file_util.h"
 
+#include <fstream>
+#include <sstream>
+
 namespace console {
   #ifdef _M_IX86
     void * exception_cast_worker(const UntypedException & e, const type_info & ti) {
@@ -120,5 +123,76 @@ namespace console {
     }
   }
 
+  std::string get_exception_information(EXCEPTION_POINTERS & eps) {
+    std::stringstream narrow_stream;
+    int skip = 0;
+    EXCEPTION_RECORD * er = eps.ExceptionRecord;
+    switch (er->ExceptionCode) {
+      case MSC_EXCEPTION_CODE: { // C++ exception
+        UntypedException ue(eps);
+        if (std::exception * e = exception_cast<std::exception>(ue)) {
+          narrow_stream << typeid(*e).name() << "\n" << e->what();
+        } else {
+          narrow_stream << "Unknown C++ exception thrown.\n";
+          get_exception_types(narrow_stream, ue);
+        }
+        skip = 2; // skips RaiseException() and _CxxThrowException()
+      } break;
+      case ASSERT_EXCEPTION_CODE: {
+        char * assert_message = reinterpret_cast<char *>(er->ExceptionInformation[0]);
+        narrow_stream << assert_message;
+        free(assert_message);
+        skip = 1; // skips RaiseException()
+      } break;
+      case EXCEPTION_ACCESS_VIOLATION: {
+        narrow_stream << "Access violation. Illegal "
+                      << (er->ExceptionInformation[0] ? "write" : "read")
+                      << " by "
+                      << er->ExceptionAddress
+                      << " at "
+                      << reinterpret_cast<void *>(er->ExceptionInformation[1]);
+      } break;
+      default: {
+        narrow_stream << "SEH exception thrown. Exception code: "
+                      << std::hex << std::uppercase << er->ExceptionCode
+                      << " at "
+                      << er->ExceptionAddress;
+      }
+    }
+    narrow_stream << "\n\nStack Trace:\n";
+    generate_stack_walk(narrow_stream, *(eps.ContextRecord), skip);
+    return narrow_stream.str();
+  }
+
+  DWORD do_exception_filter(const tstring & exe_dir,
+                            EXCEPTION_POINTERS & eps,
+                            tstring & message) {
+    std::string exception_information = get_exception_information(eps);
+
+    tstringstream sstr;
+    sstr << TBuffer(exception_information.c_str());
+
+    std::ofstream error_log(NarrowBuffer((exe_dir + _T("\\err_log.txt")).c_str()));
+    if (error_log) {
+      error_log << exception_information;
+      sstr << _T("\nThis message has been written to err_log.txt");
+    }
+  
+    message = sstr.str();
+    return EXCEPTION_EXECUTE_HANDLER;
+  }
+
+  DWORD exception_filter(const tstring & exe_dir, EXCEPTION_POINTERS & eps, tstring & message) {
+    // in case of errors like a corrupted heap or stack or other error condition that
+    //   prevents the stack trace from being built, just dump to the operating system
+    //   exception handler and hope that the filter didn't mess up the program state
+    //   sufficiently to make a crash dump useless
+    __try {
+      return do_exception_filter(exe_dir, eps, message);
+    #pragma warning(suppress: 6320)
+    } __except(EXCEPTION_EXECUTE_HANDLER) {
+      return EXCEPTION_CONTINUE_SEARCH;
+    }
+  }
 
 }

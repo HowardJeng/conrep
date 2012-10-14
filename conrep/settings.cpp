@@ -19,7 +19,7 @@
 using namespace boost::program_options;
 
 namespace console {
-  const int MIN_COLUMNS = 40;
+  const int MIN_COLUMNS = 5;
 
   #ifdef UNICODE
     #define tvalue wvalue

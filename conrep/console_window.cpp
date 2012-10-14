@@ -10,6 +10,7 @@
 #include "context_menu.h"
 #include "d3root.h"
 #include "dimension_ops.h"
+#include "except_handle.h"
 #include "exception.h"
 #include "message.h"
 #include "resource.h"
@@ -27,7 +28,7 @@ namespace console {
 
   class ConsoleWindowImpl : public IConsoleWindow {
     public:
-      ConsoleWindowImpl(HWND hub, HINSTANCE hInstance, Settings settings, RootPtr root)
+      ConsoleWindowImpl(HWND hub, HINSTANCE hInstance, Settings settings, RootPtr root, const tstring & exe_dir, tstring & message)
         : hub_(hub),
           hWnd_(NULL),
           root_(root), 
@@ -45,7 +46,9 @@ namespace console {
           work_area_(get_work_area()),
           text_renderer_(root, settings),
           active_post_alpha_(static_cast<unsigned char>(settings.active_post_alpha)),
-          inactive_post_alpha_(static_cast<unsigned char>(settings.inactive_post_alpha))
+          inactive_post_alpha_(static_cast<unsigned char>(settings.inactive_post_alpha)),
+          exe_dir_(exe_dir),
+          message_(message)
       {
         ASSERT(settings.active_post_alpha <= std::numeric_limits<unsigned char>::max());
         ASSERT(settings.inactive_post_alpha <= std::numeric_limits<unsigned char>::max());
@@ -129,7 +132,7 @@ namespace console {
         ASSERT(!class_atom);
         WNDCLASS wc = {
           CS_HREDRAW | CS_VREDRAW,
-          &ConsoleWindowImpl::InitialWndProc,
+          &ConsoleWindowImpl::initial_wnd_proc,
           0,
           0,
           hInstance,
@@ -217,6 +220,9 @@ namespace console {
 
       unsigned char active_post_alpha_;
       unsigned char inactive_post_alpha_;
+
+      const tstring & exe_dir_;
+      tstring & message_;
     private:
       void resize_console(Dimension console_dim, ProcessLock & pl) {
         text_renderer_.resize_buffers(pl.resize(console_dim));
@@ -660,7 +666,7 @@ namespace console {
         state_ = RUNNING;
       }
 
-      LRESULT ActualWndProc(UINT Msg, WPARAM wParam, LPARAM lParam) {
+      LRESULT actual_wnd_proc(UINT Msg, WPARAM wParam, LPARAM lParam) {
         switch (Msg) {
           case CRM_BACKGROUND_CHANGE:
             invalidate_self();
@@ -753,7 +759,7 @@ namespace console {
         return 0;
       }
 
-      static LRESULT CALLBACK InitialWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
+      static LRESULT CALLBACK initial_wnd_proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
         if (Msg == WM_NCCREATE) {
           LPCREATESTRUCT create_struct = reinterpret_cast<LPCREATESTRUCT>(lParam);
           ASSERT(create_struct != nullptr);
@@ -763,18 +769,29 @@ namespace console {
           ASSERT(this_window->hWnd_ == 0);
           this_window->hWnd_ = hWnd;
           set_userdata(hWnd, this_window);
-          set_wndproc(hWnd, &ConsoleWindowImpl::StaticWndProc);
-          return this_window->ActualWndProc(Msg, wParam, lParam);
+          set_wndproc(hWnd, &ConsoleWindowImpl::static_wnd_proc);
+          return this_window->actual_wnd_proc(Msg, wParam, lParam);
         }
         return DefWindowProc(hWnd, Msg, wParam, lParam);
       }
         
-      static LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
+      static LRESULT CALLBACK static_wnd_proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
         LONG_PTR user_data = GetWindowLongPtr(hWnd, GWLP_USERDATA);
         ConsoleWindowImpl * this_window = reinterpret_cast<ConsoleWindowImpl *>(user_data);
+        // this assertion may just be swallowed by the kernal
         ASSERT(this_window);
-        ASSERT(hWnd == this_window->hWnd_);
-        return this_window->ActualWndProc(Msg, wParam, lParam);
+        __try {
+          ASSERT(hWnd == this_window->hWnd_); 
+          return this_window->actual_wnd_proc(Msg, wParam, lParam);
+        // exception_flter() doesn't handle stack overflow properly, so just skip the
+        //   the function and dump to the OS exception handler in that case.
+        } __except( (GetExceptionCode() != EXCEPTION_STACK_OVERFLOW)
+                      ? exception_filter(this_window->exe_dir_, *GetExceptionInformation(), this_window->message_)
+                      : EXCEPTION_CONTINUE_SEARCH
+                   ) {
+          PostQuitMessage(EXIT_ABNORMAL_TERMINATION);
+          return DefWindowProc(hWnd, Msg, wParam, lParam);
+        }
       }
         
       static LPCTSTR class_name;
@@ -786,8 +803,13 @@ namespace console {
   
   IConsoleWindow::~IConsoleWindow() {}
 
-  WindowPtr create_console_window(HWND hub, HINSTANCE hInstance, const Settings & settings, RootPtr root) {
+  WindowPtr create_console_window(HWND hub, 
+                                  HINSTANCE hInstance, 
+                                  const Settings & settings, 
+                                  RootPtr root, 
+                                  const tstring & exe_dir,
+                                  tstring & message) {
     if (!ConsoleWindowImpl::get_class_atom()) ConsoleWindowImpl::register_window_class(hInstance);
-    return boost::make_shared<ConsoleWindowImpl>(hub, hInstance, settings, root);
+    return boost::make_shared<ConsoleWindowImpl>(hub, hInstance, settings, root, exe_dir, message);
   }
 }

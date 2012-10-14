@@ -10,6 +10,7 @@
 #include "assert.h"
 #include "console_window.h"
 #include "d3root.h"
+#include "except_handle.h"
 #include "exception.h"
 #include "file_util.h"
 #include "message.h"
@@ -20,7 +21,7 @@
 namespace console {
   class RootWindow : public IRootWindow {
     public:
-      RootWindow(HINSTANCE hInstance, const tstring & exe_dir);
+      RootWindow(HINSTANCE hInstance, const tstring & exe_dir, tstring & message);
       ~RootWindow();
       
       static void register_window_class(HINSTANCE hInstance);
@@ -36,15 +37,16 @@ namespace console {
     private:
       typedef std::map<HWND, WindowPtr> WindowMap;
 
-      HWND          hWnd_;
-      RootPtr       root_;
-      WindowMap     window_map_;
-      HINSTANCE     hInstance_;
-      tstring       exe_dir_;
-      WallpaperInfo wallpaper_info_;
-      FILETIME      wallpaper_write_time_;
-      bool          destroyed_;
-        
+      HWND            hWnd_;
+      RootPtr         root_;
+      WindowMap       window_map_;
+      HINSTANCE       hInstance_;
+      const tstring & exe_dir_;
+      tstring &       message_;
+      WallpaperInfo   wallpaper_info_;
+      FILETIME        wallpaper_write_time_;
+      bool            destroyed_;
+
       void on_close_msg(HWND window);
       void on_lost_device(void) {
         if (root_->is_device_lost()) {
@@ -107,18 +109,22 @@ namespace console {
         }
       }
 
-      LRESULT ActualWndProc(UINT Msg, WPARAM wParam, LPARAM lParam);
-      static LRESULT CALLBACK InitialWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
-      static LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+      LRESULT actual_wnd_proc(UINT Msg, WPARAM wParam, LPARAM lParam);
+      static LRESULT CALLBACK initial_wnd_proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+      static LRESULT CALLBACK static_wnd_proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 
       static LPCTSTR class_name;
-      static ATOM    class_atom; 
+      static ATOM    class_atom;
+
+      RootWindow(const RootWindow &);
+      RootWindow & operator=(const RootWindow &);
   };
 
-  RootWindow::RootWindow(HINSTANCE hInstance, const tstring & exe_dir)
+  RootWindow::RootWindow(HINSTANCE hInstance, const tstring & exe_dir, tstring & message)
     : hWnd_(NULL),
       hInstance_(hInstance),
       exe_dir_(exe_dir),
+      message_(message),
       wallpaper_info_(get_wallpaper_info()),
       destroyed_(false)
   {
@@ -170,7 +176,7 @@ namespace console {
     
     WNDCLASS wc = {
       CS_HREDRAW | CS_VREDRAW,
-      &RootWindow::InitialWndProc,
+      &RootWindow::initial_wnd_proc,
       0,
       0,
       hInstance,
@@ -203,7 +209,7 @@ namespace console {
     try {
       ASSERT(root_ != nullptr);
       
-      WindowPtr window(create_console_window(hWnd_, hInstance_, settings, root_));
+      WindowPtr window(create_console_window(hWnd_, hInstance_, settings, root_, exe_dir_, message_));
       ASSERT(window_map_.find(window->get_hwnd()) == window_map_.end());
       window_map_[window->get_hwnd()] = window;
     } catch (std::exception & e) {
@@ -229,7 +235,7 @@ namespace console {
     }
   }
     
-  LRESULT RootWindow::ActualWndProc(UINT Msg, WPARAM wParam, LPARAM lParam) {
+  LRESULT RootWindow::actual_wnd_proc(UINT Msg, WPARAM wParam, LPARAM lParam) {
     switch (Msg) {
       case CRM_CONSOLE_CLOSE:
         on_close_msg(reinterpret_cast<HWND>(lParam));
@@ -248,7 +254,7 @@ namespace console {
                 return TRUE;
               }
             }
-            MessageBox(NULL, _T("There doesn't seem to be a conrep window to adjust"), _T("conrep error"), MB_OK);
+            MessageBox(NULL, _T("There doesn't seem to be an associated conrep window to adjust"), _T("--adjust error"), MB_OK);
           } else {
             spawn_window(*msg_data);
           }
@@ -280,10 +286,7 @@ namespace console {
     return 0;
   }
 
-  LRESULT CALLBACK RootWindow::InitialWndProc(HWND hWnd,
-                                              UINT Msg,
-                                              WPARAM wParam,
-                                              LPARAM lParam) {
+  LRESULT CALLBACK RootWindow::initial_wnd_proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
     if (Msg == WM_NCCREATE) {
       LPCREATESTRUCT create_struct = reinterpret_cast<LPCREATESTRUCT>(lParam);
       ASSERT(create_struct != nullptr);
@@ -293,21 +296,29 @@ namespace console {
       ASSERT(this_window->hWnd_ == 0);
       this_window->hWnd_ = hWnd;
       set_userdata(hWnd, this_window);
-      set_wndproc(hWnd, &RootWindow::StaticWndProc);
-      return this_window->ActualWndProc(Msg, wParam, lParam);
+      set_wndproc(hWnd, &RootWindow::static_wnd_proc);
+      return this_window->actual_wnd_proc(Msg, wParam, lParam);
     }
     return DefWindowProc(hWnd, Msg, wParam, lParam);
   }
     
-  LRESULT CALLBACK RootWindow::StaticWndProc(HWND hWnd,
-                                              UINT Msg,
-                                              WPARAM wParam,
-                                              LPARAM lParam) {
+  LRESULT CALLBACK RootWindow::static_wnd_proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
     LONG_PTR user_data = GetWindowLongPtr(hWnd, GWLP_USERDATA);
     RootWindow * this_window = reinterpret_cast<RootWindow *>(user_data);
+    // this assertion may just be swallowed by the kernal
     ASSERT(this_window);
-    ASSERT(hWnd == this_window->hWnd_); 
-    return this_window->ActualWndProc(Msg, wParam, lParam);
+    __try {
+      ASSERT(hWnd == this_window->hWnd_); 
+      return this_window->actual_wnd_proc(Msg, wParam, lParam);
+    // exception_flter() doesn't handle stack overflow properly, so just skip the
+    //   the function and dump to the OS exception handler in that case.
+    } __except( (GetExceptionCode() != EXCEPTION_STACK_OVERFLOW)
+                  ? exception_filter(this_window->exe_dir_, *GetExceptionInformation(), this_window->message_)
+                  : EXCEPTION_CONTINUE_SEARCH
+               ) {
+      PostQuitMessage(EXIT_ABNORMAL_TERMINATION);
+      return DefWindowProc(hWnd, Msg, wParam, lParam);
+    }
   }
         
   LPCTSTR RootWindow::class_name = _T("{16974a76-43bd-4129-89d5-e8ecc703c253}");
@@ -315,9 +326,9 @@ namespace console {
 
   IRootWindow::~IRootWindow() {}
   
-  std::auto_ptr<IRootWindow> get_root_window(HINSTANCE hInstance, const tstring & exe_dir) {
+  std::auto_ptr<IRootWindow> get_root_window(HINSTANCE hInstance, const tstring & exe_dir, tstring & message) {
     if (!RootWindow::get_class_atom()) RootWindow::register_window_class(hInstance);
-    std::auto_ptr<IRootWindow> tmp(new RootWindow(hInstance, exe_dir));
+    std::auto_ptr<IRootWindow> tmp(new RootWindow(hInstance, exe_dir, message));
     return tmp;
   }
 }
