@@ -7,14 +7,9 @@
 #include <fstream>
 #include <iostream>
 
-#pragma warning(push)
-#pragma warning(disable : 4100)
-#pragma warning(disable : 4512)
-#include <boost/program_options.hpp>
-#pragma warning(pop)
-
 #include "assert.h"
 #include "exception.h"
+#include "program_options.h"
 
 using namespace boost::program_options;
 

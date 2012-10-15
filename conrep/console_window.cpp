@@ -13,6 +13,7 @@
 #include "except_handle.h"
 #include "exception.h"
 #include "message.h"
+#include "program_options.h"
 #include "resource.h"
 #include "root_window.h"
 #include "settings.h"
@@ -609,9 +610,7 @@ namespace console {
         }
       }
 
-      void on_adjust(MessageData * msg_data) {
-        Settings settings(msg_data->cmd_line);
-
+      void on_adjust(const Settings & settings) {
         if (settings.scl_z_order) set_z_order(settings.z_order);
         if (settings.scl_snap_distance) snap_distance_ = settings.snap_distance;
         if (settings.scl_active_post_alpha) {
@@ -664,6 +663,15 @@ namespace console {
           resize_window(new_client_dim, new_window_dim);
         }
         state_ = RUNNING;
+      }
+
+      void on_adjust(MessageData * msg_data) {
+        try {
+          Settings settings(msg_data->cmd_line);
+          on_adjust(settings);
+        } catch (boost::program_options::invalid_option_value & e) {
+          MessageBox(hWnd_, TBuffer(e.what()), _T("--adjust error"), MB_OK);
+        }
       }
 
       LRESULT actual_wnd_proc(UINT Msg, WPARAM wParam, LPARAM lParam) {

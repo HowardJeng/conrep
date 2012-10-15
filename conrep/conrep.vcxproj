@@ -285,6 +285,7 @@
     <ClInclude Include="lexical_cast.h" />
     <ClInclude Include="mem_stream.h" />
     <ClInclude Include="message.h" />
+    <ClInclude Include="program_options.h" />
     <ClInclude Include="reg.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="root_window.h" />
