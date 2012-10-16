@@ -145,7 +145,7 @@ namespace console {
     add_both_options(cmd_line_desc, &settings);
     add_hidden_options(cmd_line_desc);
 
-    store(basic_command_line_parser<TCHAR>(args).options(cmd_line_desc).allow_unregistered().run(), vm);
+    store(basic_command_line_parser<TCHAR>(args).options(cmd_line_desc).run(), vm);
     vm.notify();
     #define SCL(name) do { settings.scl_ ## name = !(vm[#name].defaulted()); } while (0)
     SCL(font_name);

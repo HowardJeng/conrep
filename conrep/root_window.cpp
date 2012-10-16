@@ -14,6 +14,7 @@
 #include "exception.h"
 #include "file_util.h"
 #include "message.h"
+#include "program_options.h"
 #include "reg.h"
 #include "settings.h"
 #include "win_util.h"
@@ -195,7 +196,7 @@ namespace console {
     try {
       Settings settings(message_data.cmd_line, exe_dir_.c_str());
       return spawn_window(settings);
-    } catch (std::exception & e) {
+    } catch (boost::program_options::error & e) {
       tstringstream sstr;
       sstr << _T("Error parsing settings: ") << e.what();
       MessageBox(NULL,  sstr.str().c_str(), _T("Error parsing settings"), MB_OK);
@@ -206,18 +207,13 @@ namespace console {
     
   bool RootWindow::spawn_window(const Settings & settings) {
     if (!settings.run_app) return false;
-    try {
-      ASSERT(root_ != nullptr);
+
+    ASSERT(root_ != nullptr);
       
-      WindowPtr window(create_console_window(hWnd_, hInstance_, settings, root_, exe_dir_, message_));
-      ASSERT(window_map_.find(window->get_hwnd()) == window_map_.end());
-      window_map_[window->get_hwnd()] = window;
-    } catch (std::exception & e) {
-      tstringstream sstr;
-      sstr << _T("Error creating console window: ") << e.what();
-      MessageBox(NULL, sstr.str().c_str(), _T("Error creating console window"), MB_OK);
-      return false;
-    }
+    WindowPtr window(create_console_window(hWnd_, hInstance_, settings, root_, exe_dir_, message_));
+    ASSERT(window_map_.find(window->get_hwnd()) == window_map_.end());
+    window_map_[window->get_hwnd()] = window;
+
     return true;
   }
     

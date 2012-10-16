@@ -669,7 +669,7 @@ namespace console {
         try {
           Settings settings(msg_data->cmd_line);
           on_adjust(settings);
-        } catch (boost::program_options::invalid_option_value & e) {
+        } catch (boost::program_options::error & e) {
           MessageBox(hWnd_, TBuffer(e.what()), _T("--adjust error"), MB_OK);
         }
       }
