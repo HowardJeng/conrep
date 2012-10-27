@@ -760,6 +760,7 @@ namespace console {
           case WM_SYSKEYUP:
             PostMessage(shell_process_.window_handle(), Msg, wParam, lParam);
             update_scrollbar();
+            invalidate_self();
             break;
           default:
             return DefWindowProc(hWnd_, Msg, wParam, lParam);
