@@ -4,7 +4,7 @@
 #include "windows.h"
 
 namespace console {
-  void set_wndproc(HWND hWnd, WNDPROC proc);
+  void set_wndproc(HWND hWnd, WNDPROC proc, bool allow_invalid_handle = false);
   void set_userdata(HWND hWnd, void * user_data);
   
   void set_z_top(HWND hWnd);

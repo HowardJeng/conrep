@@ -18,35 +18,27 @@
 #include "reg.h"
 #include "settings.h"
 #include "win_util.h"
+#include "window.h"
 
 namespace console {
-  class RootWindow : public IRootWindow {
+
+  class RootWindow : public IRootWindow, public Window<RootWindow> {
     public:
       RootWindow(HINSTANCE hInstance, const tstring & exe_dir, tstring & message);
-      ~RootWindow();
+      ~RootWindow() {}
       
-      static void register_window_class(HINSTANCE hInstance);
-        
       bool spawn_window(const MessageData & message_data);
       bool spawn_window(const Settings & settings);
-        
-      static ATOM get_class_atom(void) {
-        return class_atom;
-      }
         
       HWND hwnd(void) const;
     private:
       typedef std::map<HWND, WindowPtr> WindowMap;
 
-      HWND            hWnd_;
       RootPtr         root_;
       WindowMap       window_map_;
       HINSTANCE       hInstance_;
-      const tstring & exe_dir_;
-      tstring &       message_;
       WallpaperInfo   wallpaper_info_;
       FILETIME        wallpaper_write_time_;
-      bool            destroyed_;
 
       void on_close_msg(HWND window);
       void on_lost_device(void) {
@@ -111,90 +103,36 @@ namespace console {
       }
 
       LRESULT actual_wnd_proc(UINT Msg, WPARAM wParam, LPARAM lParam);
-      static LRESULT CALLBACK initial_wnd_proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
-      static LRESULT CALLBACK static_wnd_proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
-
-      static LPCTSTR class_name;
-      static ATOM    class_atom;
 
       RootWindow(const RootWindow &);
       RootWindow & operator=(const RootWindow &);
   };
 
   RootWindow::RootWindow(HINSTANCE hInstance, const tstring & exe_dir, tstring & message)
-    : hWnd_(NULL),
+    : Window<RootWindow>(hInstance, WS_OVERLAPPEDWINDOW, exe_dir, message, _T("Root Window")),
       hInstance_(hInstance),
-      exe_dir_(exe_dir),
-      message_(message),
-      wallpaper_info_(get_wallpaper_info()),
-      destroyed_(false)
+      wallpaper_info_(get_wallpaper_info())
   {
-    ASSERT(HIWORD(class_atom) == 0);
-    ASSERT(class_atom);
-    if (!class_atom) MISC_EXCEPT("Attempted to create window without registering class.");
     if (!wallpaper_info_.wallpaper_name.empty())
       wallpaper_write_time_ = get_modify_time(wallpaper_info_.wallpaper_name);
 
-    HWND hWnd = CreateWindow(reinterpret_cast<LPCTSTR>(class_atom),
-                              _T("Root Window"),
-                              WS_OVERLAPPEDWINDOW,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              NULL, 
-                              NULL, 
-                              hInstance,
-                              this);
-    if (!hWnd) WIN_EXCEPT("Failed call to CreateWindow(). ");
-    ASSERT(hWnd == hWnd_);
-    ShowWindow(hWnd_, SW_HIDE); // no error checks as either return is legitimate
+    ShowWindow(get_hwnd(), SW_HIDE); // no error checks as either return is legitimate
       
     try {
-      root_ = get_direct3d_root(hWnd_);
+      root_ = get_direct3d_root(get_hwnd());
       ASSERT(root_ != nullptr);
     } catch (...) {
       // if this fails reset the WndProc to DefWindowProc() as the object
       //   invariants won't hold during subsequent window messages that come
       //   along when the MessageBox() function is called.
-      set_wndproc(hWnd_, &DefWindowProc);
+      set_wndproc(get_hwnd(), &DefWindowProc);
       throw;
     }
-  }
-    
-  RootWindow::~RootWindow() {
-    // in case of an exception, C++ object can be potentially deleted before
-    //   WM_DESTROY is processed
-    if (!destroyed_) {
-      set_wndproc(hWnd_, &DefWindowProc);
-      DestroyWindow(hWnd_);
-    }
-  }
-
-  void RootWindow::register_window_class(HINSTANCE hInstance) {
-    ASSERT(!class_atom);
-    if (class_atom) MISC_EXCEPT("RootWindow::register_window_class() called multiple times.");
-    
-    WNDCLASS wc = {
-      CS_HREDRAW | CS_VREDRAW,
-      &RootWindow::initial_wnd_proc,
-      0,
-      0,
-      hInstance,
-      NULL, 
-      NULL, 
-      reinterpret_cast<HBRUSH>(COLOR_BACKGROUND),
-      NULL,
-      RootWindow::class_name
-    };
-      
-    class_atom = RegisterClass(&wc);
-    if (class_atom == 0) WIN_EXCEPT("Failed call to RegisterClass(). ");
   }
 
   bool RootWindow::spawn_window(const MessageData & message_data) {
     try {
-      Settings settings(message_data.cmd_line, exe_dir_.c_str());
+      Settings settings(message_data.cmd_line, get_exe_dir().c_str());
       return spawn_window(settings);
     } catch (boost::program_options::error & e) {
       tstringstream sstr;
@@ -210,7 +148,7 @@ namespace console {
 
     ASSERT(root_ != nullptr);
       
-    WindowPtr window(create_console_window(hWnd_, hInstance_, settings, root_, exe_dir_, message_));
+    WindowPtr window(create_console_window(get_hwnd(), hInstance_, settings, root_, get_exe_dir(), get_message()));
     ASSERT(window_map_.find(window->get_hwnd()) == window_map_.end());
     window_map_[window->get_hwnd()] = window;
 
@@ -218,7 +156,7 @@ namespace console {
   }
     
   HWND RootWindow::hwnd(void) const {
-    return hWnd_;
+    return get_hwnd();
   }
 
   void RootWindow::on_close_msg(HWND window) {
@@ -227,7 +165,7 @@ namespace console {
     ASSERT(itr->second->get_state() == DEAD);
     window_map_.erase(itr);
     if (window_map_.empty()) {
-      if (!PostMessage(hWnd_, WM_CLOSE, 0, 0)) WIN_EXCEPT("Failed call to PostMessage(). ");
+      if (!PostMessage(get_hwnd(), WM_CLOSE, 0, 0)) WIN_EXCEPT("Failed call to PostMessage(). ");
     }
   }
     
@@ -257,19 +195,7 @@ namespace console {
           return TRUE;
         }
         break;
-      case WM_CREATE:
-        { LPCREATESTRUCT create_struct = reinterpret_cast<LPCREATESTRUCT>(lParam);
-          ASSERT(create_struct != nullptr);
-          void * lpCreateParam = create_struct->lpCreateParams;
-          RootWindow * this_window = reinterpret_cast<RootWindow *>(lpCreateParam);
-          ASSERT(this_window == this);
-          return DefWindowProc(hWnd_, Msg, wParam, lParam);
-        }
       case WM_DESTROY:
-        // Setting window proc to DefWindowProc allows the C++ object for
-        //   the window to be deleted immediately.
-        destroyed_ = true;
-        set_wndproc(hWnd_, &DefWindowProc);
         PostQuitMessage(0);
         break;
       case WM_DISPLAYCHANGE:
@@ -277,46 +203,11 @@ namespace console {
         on_settingchange();
         break;
       default:
-        return DefWindowProc(hWnd_, Msg, wParam, lParam);
+        return Window<RootWindow>::actual_wnd_proc(Msg, wParam, lParam);
     }
     return 0;
   }
 
-  LRESULT CALLBACK RootWindow::initial_wnd_proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
-    if (Msg == WM_NCCREATE) {
-      LPCREATESTRUCT create_struct = reinterpret_cast<LPCREATESTRUCT>(lParam);
-      ASSERT(create_struct != nullptr);
-      void * lpCreateParam = create_struct->lpCreateParams;
-      RootWindow * this_window = reinterpret_cast<RootWindow *>(lpCreateParam);
-      ASSERT(this_window != nullptr);
-      ASSERT(this_window->hWnd_ == 0);
-      this_window->hWnd_ = hWnd;
-      set_userdata(hWnd, this_window);
-      set_wndproc(hWnd, &RootWindow::static_wnd_proc);
-      return this_window->actual_wnd_proc(Msg, wParam, lParam);
-    }
-    return DefWindowProc(hWnd, Msg, wParam, lParam);
-  }
-    
-  LRESULT CALLBACK RootWindow::static_wnd_proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
-    LONG_PTR user_data = GetWindowLongPtr(hWnd, GWLP_USERDATA);
-    RootWindow * this_window = reinterpret_cast<RootWindow *>(user_data);
-    // this assertion may just be swallowed by the kernal
-    ASSERT(this_window);
-    __try {
-      ASSERT(hWnd == this_window->hWnd_); 
-      return this_window->actual_wnd_proc(Msg, wParam, lParam);
-    // exception_flter() doesn't handle stack overflow properly, so just skip the
-    //   the function and dump to the OS exception handler in that case.
-    } __except( (GetExceptionCode() != EXCEPTION_STACK_OVERFLOW)
-                  ? exception_filter(this_window->exe_dir_, *GetExceptionInformation(), this_window->message_)
-                  : EXCEPTION_CONTINUE_SEARCH
-               ) {
-      PostQuitMessage(EXIT_ABNORMAL_TERMINATION);
-      return DefWindowProc(hWnd, Msg, wParam, lParam);
-    }
-  }
-        
   LPCTSTR RootWindow::class_name = _T("{16974a76-43bd-4129-89d5-e8ecc703c253}");
   ATOM    RootWindow::class_atom = 0;
 

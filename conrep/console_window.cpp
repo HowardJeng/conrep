@@ -20,6 +20,7 @@
 #include "shell_process.h"
 #include "text_renderer.h"
 #include "timer.h"
+#include "window.h"
 #include "win_util.h"
 
 #define CLOSE_SELF() do { close_self(); return; } while (0)
@@ -27,11 +28,11 @@
 namespace console {
   const DWORD WINDOW_STYLE = WS_POPUPWINDOW | WS_VSCROLL;
 
-  class ConsoleWindowImpl : public IConsoleWindow {
+  class ConsoleWindowImpl : public IConsoleWindow, public Window<ConsoleWindowImpl> {
     public:
       ConsoleWindowImpl(HWND hub, HINSTANCE hInstance, Settings settings, RootPtr root, const tstring & exe_dir, tstring & message)
-        : hub_(hub),
-          hWnd_(NULL),
+        : Window<ConsoleWindowImpl>(hInstance, WINDOW_STYLE, exe_dir, message, _T("")),
+          hub_(hub),
           root_(root), 
           shell_process_(settings),
           active_(true),
@@ -47,9 +48,7 @@ namespace console {
           work_area_(get_work_area()),
           text_renderer_(root, settings),
           active_post_alpha_(static_cast<unsigned char>(settings.active_post_alpha)),
-          inactive_post_alpha_(static_cast<unsigned char>(settings.inactive_post_alpha)),
-          exe_dir_(exe_dir),
-          message_(message)
+          inactive_post_alpha_(static_cast<unsigned char>(settings.inactive_post_alpha))
       {
         ASSERT(settings.active_post_alpha <= std::numeric_limits<unsigned char>::max());
         ASSERT(settings.inactive_post_alpha <= std::numeric_limits<unsigned char>::max());
@@ -77,78 +76,28 @@ namespace console {
           
         if (maximize_) window_dim = max_window_dim;
           
-        // actually create the window
-        ASSERT(HIWORD(class_atom) == 0);
-        ASSERT(class_atom);
-        HWND hWnd = CreateWindow(reinterpret_cast<LPCTSTR>(class_atom),
-                                  _T("Console Window"),
-                                  WINDOW_STYLE,
-                                  0,
-                                  0,
-                                  window_dim.width,
-                                  window_dim.height,
-                                  NULL,
-                                  NULL,
-                                  hInstance,
-                                  this);
-        // a number of messages should already have been processed including WM_CREATE
-        if (!hWnd) WIN_EXCEPT("Failed call to CreateWindow(). ");
-        ASSERT(hWnd == hWnd_);
-        ShowWindow(hWnd_, SW_SHOW); // no error checks as either return is legitimate
-          
-        try {
-          set_z_order(settings.z_order);
+        ShowWindow(get_hwnd(), SW_SHOW); // no error checks as either return is legitimate
 
-          // Direct3D stuff
-          if (maximize_) {
-            client_dim = get_client_dim(max_window_dim, scrollbar_width_, WINDOW_STYLE);
-          }
-          swap_chain_ = root_->get_swap_chain(hWnd_, client_dim);
-          HRESULT hr = swap_chain_->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &render_target_);
-          if (FAILED(hr)) DX_EXCEPT("Failed IDirect3DSwapChain9::GetBackBuffer() call ", hr);
-          text_renderer_.create_texture(root_, client_dim);
+        set_z_order(settings.z_order);
 
-          // start the machinery running
-          state_ = RUNNING;
-          if (!SetTimer(hWnd_, TIMER_REPAINT, REPAINT_TIME, 0)) WIN_EXCEPT("Failed SetTimer() call. ");
-          if (!UpdateWindow(hWnd_)) WIN_EXCEPT("Failed UpdateWindow() call. ");
-        } catch (...) {
-          // if this fails reset the WndProc to DefWindowProc() as the object
-          //   invariants won't hold during subsequent window messages that come
-          //   along when the MessageBox() function is called.
-          set_wndproc(hWnd_, &DefWindowProc);
-          throw;
+        // Direct3D stuff
+        if (maximize_) {
+          client_dim = get_client_dim(max_window_dim, scrollbar_width_, WINDOW_STYLE);
         }
+
+        state_ = RESETTING;
+        resize_window(client_dim, window_dim);
+
+        // start the machinery running
+        state_ = RUNNING;
+        if (!SetTimer(get_hwnd(), TIMER_REPAINT, REPAINT_TIME, 0)) WIN_EXCEPT("Failed SetTimer() call. ");
+        if (!UpdateWindow(get_hwnd())) WIN_EXCEPT("Failed UpdateWindow() call. ");
       }
 
-      ~ConsoleWindowImpl() {
-        // in case C++ object is deleted before WM_DESTROY is processed
-        if (state_ != DEAD) {
-          set_wndproc(hWnd_, &DefWindowProc);
-          DestroyWindow(hWnd_);
-        }
-      }
+      ~ConsoleWindowImpl() {}
       
-      static void register_window_class(HINSTANCE hInstance) {
-        ASSERT(!class_atom);
-        WNDCLASS wc = {
-          CS_HREDRAW | CS_VREDRAW,
-          &ConsoleWindowImpl::initial_wnd_proc,
-          0,
-          0,
-          hInstance,
-          NULL,
-          NULL,
-          NULL,
-          NULL,
-          ConsoleWindowImpl::class_name
-        };
-        class_atom = RegisterClass(&wc);
-        if (class_atom == 0) WIN_EXCEPT("Failed call to RegisterClass(). ");
-      }
-        
       HWND get_hwnd(void) const {
-        return hWnd_;
+        return Window<ConsoleWindowImpl>::get_hwnd();
       }
 
       HWND get_console_hwnd(void) const {
@@ -159,10 +108,6 @@ namespace console {
         return state_;
       }
         
-      static ATOM get_class_atom(void) {
-        return class_atom;
-      }
-
       void dispose_resources(void) {
         // release handles to shared resources
         sprite_ = 0;
@@ -185,14 +130,13 @@ namespace console {
           client_dim = get_client_dim(max_window_dim, scrollbar_width_, WINDOW_STYLE);
         }
 
-        swap_chain_ = root_->get_swap_chain(hWnd_, client_dim);
+        swap_chain_ = root_->get_swap_chain(get_hwnd(), client_dim);
         HRESULT hr = swap_chain_->GetBackBuffer(0,  D3DBACKBUFFER_TYPE_MONO,  &render_target_);
         if (FAILED(hr)) DX_EXCEPT("Failed IDirect3DSwapChain9::GetBackBuffer() call ", hr);
         text_renderer_.create_texture(root_, client_dim);
       }
     private:
       HWND hub_;  // handle to controller window
-      HWND hWnd_; // self handle
       RootPtr root_; // pointer to per application Direct3D information
       ShellProcess shell_process_; // interface to spawned process
 
@@ -221,9 +165,6 @@ namespace console {
 
       unsigned char active_post_alpha_;
       unsigned char inactive_post_alpha_;
-
-      const tstring & exe_dir_;
-      tstring & message_;
     private:
       void resize_console(Dimension console_dim, ProcessLock & pl) {
         text_renderer_.resize_buffers(pl.resize(console_dim));
@@ -232,7 +173,7 @@ namespace console {
       BOOL on_create(void) {
         ASSERT(state_ == INITIALIZING);
 
-        if (!SetForegroundWindow(hWnd_)) {
+        if (!SetForegroundWindow(get_hwnd())) {
           DWORD err = GetLastError();
           if (err != 0) WIN_EXCEPT2("Failed call to SetForegroundWindow(). ", err);
         }
@@ -242,7 +183,7 @@ namespace console {
         
       BOOL draw_background_enum_proc_impl(HMONITOR hMonitor, HDC, LPRECT lprcMonitor) {
         POINT p = { 0, 0 };
-        if (!ClientToScreen(hWnd_, &p)) WIN_EXCEPT("Failed call to ClientToScreen(). ");
+        if (!ClientToScreen(get_hwnd(), &p)) WIN_EXCEPT("Failed call to ClientToScreen(). ");
         p.x -= lprcMonitor->left;
         p.y -= lprcMonitor->top;
 
@@ -286,7 +227,7 @@ namespace console {
                 DX_EXCEPT("Failed call to IDirect3DSwapChain9::Present(). ", hr);
               }
             } else {
-              if (!ValidateRect(hWnd_, NULL)) WIN_EXCEPT("Failed call to ValidateRect(). ");
+              if (!ValidateRect(get_hwnd(), NULL)) WIN_EXCEPT("Failed call to ValidateRect(). ");
             }
           }
         }
@@ -297,7 +238,7 @@ namespace console {
         ASSERT(shell_process_.attached());
         if ((state_ == RUNNING) && (!root_->is_device_lost())) {
           text_renderer_.update_text_buffer(pl, root_, sprite_, active_);
-          if (!SetTimer(hWnd_, TIMER_REPAINT, REPAINT_TIME, 0)) WIN_EXCEPT("Failed call to SetTimer(). ");
+          if (!SetTimer(get_hwnd(), TIMER_REPAINT, REPAINT_TIME, 0)) WIN_EXCEPT("Failed call to SetTimer(). ");
         }
       }
         
@@ -316,14 +257,14 @@ namespace console {
           ASSERT(si.cbSize == sizeof(SCROLLINFO));
           ASSERT(si.fMask == SIF_ALL);
           // SetScrollInfo()'s return doesn't contain an error value so can be ignored
-          SetScrollInfo(hWnd_, SB_VERT, &si, TRUE);
+          SetScrollInfo(get_hwnd(), SB_VERT, &si, TRUE);
         }
       }
         
       void close_self(void) {
         state_ = CLOSING;
         dispose_resources();
-        if (!PostMessage(hWnd_, WM_CLOSE, 0, 0)) WIN_EXCEPT("Failed call to PostMessage(). ");
+        if (!PostMessage(get_hwnd(), WM_CLOSE, 0, 0)) WIN_EXCEPT("Failed call to PostMessage(). ");
       }
         
       void update_console_size(ProcessLock & pl) {
@@ -369,10 +310,13 @@ namespace console {
         // Profiler indicates that SetWindowText() is sufficiently slower than GetWindowtext() that checking if
         //   the text is the same first makes sense
         TCHAR window_text[BUFFER_SIZE] = {};
-        if (!GetWindowText(hWnd_, window_text, BUFFER_SIZE)) WIN_EXCEPT("Failed call to GetWindowText(). ");
+        if (!GetWindowText(get_hwnd(), window_text, BUFFER_SIZE)) {
+          DWORD err = GetLastError();
+          if (err != 0) WIN_EXCEPT2("Failed call to GetWindowText(). ", err);
+        }
         if (_tcsncmp(console_title, window_text, BUFFER_SIZE) == 0) return;
 
-        if (!SetWindowText(hWnd_, console_title)) WIN_EXCEPT("Failed call to SetWindowText(). ");
+        if (!SetWindowText(get_hwnd(), console_title)) WIN_EXCEPT("Failed call to SetWindowText(). ");
       }
 
       BOOL on_moving(LPARAM lParam) { 
@@ -383,7 +327,7 @@ namespace console {
           r->top    = 0;
           r->left   = 0;
         } else {
-          HMONITOR mon = MonitorFromWindow(hWnd_, MONITOR_DEFAULTTOPRIMARY);
+          HMONITOR mon = MonitorFromWindow(get_hwnd(), MONITOR_DEFAULTTOPRIMARY);
           MONITORINFO info = { sizeof(MONITORINFO) };
           if (!GetMonitorInfo(mon, &info)) WIN_EXCEPT("Failed call to GetMonitorInfo(). ");
           work_area_ = info.rcWork;
@@ -397,7 +341,7 @@ namespace console {
       }
 
       bool check_active_changed(void) {
-        bool is_active = (GetForegroundWindow() == hWnd_);
+        bool is_active = (GetForegroundWindow() == get_hwnd());
         if (is_active != active_) {
           active_ = is_active;
           return true;
@@ -413,7 +357,7 @@ namespace console {
       }
         
       void move_window(int x, int y) {
-        if (!SetWindowPos(hWnd_, 
+        if (!SetWindowPos(get_hwnd(), 
                           0, // ignored
                           x,
                           y,
@@ -433,7 +377,7 @@ namespace console {
           
           Dimension old_window_dim = get_max_window_dim(work_area_);
 
-          HMONITOR mon = MonitorFromWindow(hWnd_, MONITOR_DEFAULTTOPRIMARY);
+          HMONITOR mon = MonitorFromWindow(get_hwnd(), MONITOR_DEFAULTTOPRIMARY);
           MONITORINFO info = { sizeof(MONITORINFO) };
           if (!GetMonitorInfo(mon, &info)) WIN_EXCEPT("Error in GetMonitorInfo() call. ");
 
@@ -468,7 +412,7 @@ namespace console {
           }
           
           RECT r;
-          if (!GetWindowRect(hWnd_, &r)) WIN_EXCEPT("Failed call to GetWindowRect().");
+          if (!GetWindowRect(get_hwnd(), &r)) WIN_EXCEPT("Failed call to GetWindowRect().");
 
           int delta_left   = r.left   - work_area_.left;
           int delta_right  = r.right  - work_area_.right;
@@ -478,7 +422,7 @@ namespace console {
           int new_x = r.left;
           int new_y = r.top;
 
-          HMONITOR mon = MonitorFromWindow(hWnd_, MONITOR_DEFAULTTOPRIMARY);
+          HMONITOR mon = MonitorFromWindow(get_hwnd(), MONITOR_DEFAULTTOPRIMARY);
           MONITORINFO info = { sizeof(MONITORINFO) };
           if (!GetMonitorInfo(mon, &info)) WIN_EXCEPT("Failed call to GetMonitorInfo(). ");
            
@@ -507,7 +451,7 @@ namespace console {
         
       void change_font(void) {
         ASSERT(state_ == RUNNING);
-        if (text_renderer_.choose_font(device_, hWnd_)) {
+        if (text_renderer_.choose_font(device_, get_hwnd())) {
           state_ = RESETTING;
           if (maximize_) {
             Dimension window_dim = get_max_window_dim(work_area_);
@@ -534,7 +478,7 @@ namespace console {
 
       void resize_window(Dimension new_client_dim, Dimension new_window_dim) {
         ASSERT(state_ == RESETTING);
-        if (!SetWindowPos(hWnd_, 0, 0, 0, new_window_dim.width, new_window_dim.height, SWP_NOMOVE | SWP_NOZORDER))
+        if (!SetWindowPos(get_hwnd(), 0, 0, 0, new_window_dim.width, new_window_dim.height, SWP_NOMOVE | SWP_NOZORDER))
           WIN_EXCEPT("Failed call to SetWindowPos().");
 
         if (!root_->is_device_lost()) {
@@ -547,7 +491,7 @@ namespace console {
               DX_EXCEPT("Failed call to IDirect3DDevice9::TestCooperativeLevel().", hr);
             }
           } else {
-            swap_chain_ = root_->get_swap_chain(hWnd_, new_client_dim);
+            swap_chain_ = root_->get_swap_chain(get_hwnd(), new_client_dim);
             render_target_ = 0;
             hr = swap_chain_->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &render_target_);
             if (FAILED(hr)) DX_EXCEPT("Failed call to IDirect3DSwapChain9::GetBackBuffer().", hr);
@@ -590,20 +534,20 @@ namespace console {
       }
         
       void invalidate_self(void) {
-        if (!InvalidateRect(hWnd_, 0, FALSE)) WIN_EXCEPT("Failed call to InvalidateRect(). ");
+        if (!InvalidateRect(get_hwnd(), 0, FALSE)) WIN_EXCEPT("Failed call to InvalidateRect(). ");
       }
 
       void set_z_order(ZOrder z_order) {
         z_order_ = z_order;
         switch (z_order) {
           case Z_BOTTOM:
-            set_z_bottom(hWnd_);
+            set_z_bottom(get_hwnd());
             return;
           case Z_NORMAL:
-            set_z_normal(hWnd_);
+            set_z_normal(get_hwnd());
             return;
           case Z_TOP:
-            set_z_top(hWnd_);
+            set_z_top(get_hwnd());
             return;
           default:
             ASSERT(false);
@@ -626,7 +570,7 @@ namespace console {
         if (settings.scl_maximize) {
           maximize_ = settings.maximize;
           if (maximize_) {
-            HMONITOR mon = MonitorFromWindow(hWnd_, MONITOR_DEFAULTTOPRIMARY);
+            HMONITOR mon = MonitorFromWindow(get_hwnd(), MONITOR_DEFAULTTOPRIMARY);
             MONITORINFO info = { sizeof(MONITORINFO) };
             if (!GetMonitorInfo(mon, &info)) WIN_EXCEPT("Error in GetMonitorInfo() call. ");
 
@@ -670,7 +614,7 @@ namespace console {
           Settings settings(msg_data->cmd_line);
           on_adjust(settings);
         } catch (boost::program_options::error & e) {
-          MessageBox(hWnd_, TBuffer(e.what()), _T("--adjust error"), MB_OK);
+          MessageBox(get_hwnd(), TBuffer(e.what()), _T("--adjust error"), MB_OK);
         }
       }
 
@@ -694,20 +638,9 @@ namespace console {
           case WM_COMMAND:
             on_command(LOWORD(wParam));
             return 0;
-          case WM_CREATE:
-            { LPCREATESTRUCT create_struct = reinterpret_cast<LPCREATESTRUCT>(lParam);
-              ASSERT(create_struct != nullptr);
-              void * lpCreateParam = create_struct->lpCreateParams;
-              ConsoleWindowImpl * this_window = reinterpret_cast<ConsoleWindowImpl *>(lpCreateParam);
-              ASSERT(this_window == this);
-              return on_create();
-            }
           case WM_DESTROY:
             state_ = DEAD;
-            // Setting window proc to DefWindowProc allows the C++ object for
-            //   the window to be deleted immediately.
-            set_wndproc(hWnd_, &DefWindowProc);
-            SendMessage(hub_, CRM_CONSOLE_CLOSE, 0, reinterpret_cast<LPARAM>(hWnd_));
+            SendMessage(hub_, CRM_CONSOLE_CLOSE, 0, reinterpret_cast<LPARAM>(get_hwnd()));
             break;
           case WM_MOVE:
             on_move(lParam);
@@ -717,7 +650,7 @@ namespace console {
           case WM_NCHITTEST:
             { POINTS p = MAKEPOINTS(lParam); 
               WINDOWINFO wi = {};
-              if (!GetWindowInfo(hWnd_, &wi)) WIN_EXCEPT("Failed call to GetWindowInfo(). ");
+              if (!GetWindowInfo(get_hwnd(), &wi)) WIN_EXCEPT("Failed call to GetWindowInfo(). ");
               int window_x = p.x - wi.rcWindow.left;
               int scroll_start = wi.rcWindow.right - wi.rcWindow.left + 1
                                 - 2 * wi.cxWindowBorders
@@ -738,7 +671,7 @@ namespace console {
               menu_->set_console_visible(console_visible_);
               menu_->set_z_order(z_order_);
               text_renderer_.set_menu_options(menu_);
-              menu_->display(hWnd_, p);
+              menu_->display(get_hwnd(), p);
             }
             break;
           case WM_TIMER:
@@ -763,48 +696,10 @@ namespace console {
             invalidate_self();
             break;
           default:
-            return DefWindowProc(hWnd_, Msg, wParam, lParam);
+            break;
         }
-        return 0;
+        return Window<ConsoleWindowImpl>::actual_wnd_proc(Msg, wParam, lParam);
       }
-
-      static LRESULT CALLBACK initial_wnd_proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
-        if (Msg == WM_NCCREATE) {
-          LPCREATESTRUCT create_struct = reinterpret_cast<LPCREATESTRUCT>(lParam);
-          ASSERT(create_struct != nullptr);
-          void * lpCreateParam = create_struct->lpCreateParams;
-          ConsoleWindowImpl * this_window = reinterpret_cast<ConsoleWindowImpl *>(lpCreateParam);
-          ASSERT(this_window != nullptr);
-          ASSERT(this_window->hWnd_ == 0);
-          this_window->hWnd_ = hWnd;
-          set_userdata(hWnd, this_window);
-          set_wndproc(hWnd, &ConsoleWindowImpl::static_wnd_proc);
-          return this_window->actual_wnd_proc(Msg, wParam, lParam);
-        }
-        return DefWindowProc(hWnd, Msg, wParam, lParam);
-      }
-        
-      static LRESULT CALLBACK static_wnd_proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
-        LONG_PTR user_data = GetWindowLongPtr(hWnd, GWLP_USERDATA);
-        ConsoleWindowImpl * this_window = reinterpret_cast<ConsoleWindowImpl *>(user_data);
-        // this assertion may just be swallowed by the kernal
-        ASSERT(this_window);
-        __try {
-          ASSERT(hWnd == this_window->hWnd_); 
-          return this_window->actual_wnd_proc(Msg, wParam, lParam);
-        // exception_flter() doesn't handle stack overflow properly, so just skip the
-        //   the function and dump to the OS exception handler in that case.
-        } __except( (GetExceptionCode() != EXCEPTION_STACK_OVERFLOW)
-                      ? exception_filter(this_window->exe_dir_, *GetExceptionInformation(), this_window->message_)
-                      : EXCEPTION_CONTINUE_SEARCH
-                   ) {
-          PostQuitMessage(EXIT_ABNORMAL_TERMINATION);
-          return DefWindowProc(hWnd, Msg, wParam, lParam);
-        }
-      }
-        
-      static LPCTSTR class_name;
-      static ATOM    class_atom; 
   };
 
   LPCTSTR ConsoleWindowImpl::class_name = _T("{58ca8e3c-c7b0-4e84-bce6-d8502b2a4a8a}");

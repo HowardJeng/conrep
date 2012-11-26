@@ -4,12 +4,14 @@
 #include "exception.h"
 
 namespace console {
-  void set_wndproc(HWND hWnd, WNDPROC proc) {
+  void set_wndproc(HWND hWnd, WNDPROC proc, bool allow_invalid_handle) {
     SetLastError(0);
     LONG_PTR ret_val = SetWindowLongPtr(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(proc));
     if (ret_val == 0) {
       DWORD err = GetLastError();
-      if (err) WIN_EXCEPT2("Failure in SetWindowLongPtr(GWLP_WNDPROC).", err);
+      if (err && !((err == 1400) && allow_invalid_handle)) {
+        WIN_EXCEPT2("Failure in SetWindowLongPtr(GWLP_WNDPROC).", err);
+      }
     }
   }
 
@@ -28,6 +30,7 @@ namespace console {
   }
 
   void set_z_normal(HWND hWnd) {
+    if (!SetWindowPos(hWnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE)) WIN_EXCEPT("Failed call to SetWindowPos(). ");
     if (!SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE)) WIN_EXCEPT("Failed call to SetWindowPos(). ");
   }
 

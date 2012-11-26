@@ -294,6 +294,7 @@
     <ClInclude Include="tchar.h" />
     <ClInclude Include="text_renderer.h" />
     <ClInclude Include="timer.h" />
+    <ClInclude Include="window.h" />
     <ClInclude Include="windows.h" />
     <ClInclude Include="win_util.h" />
   </ItemGroup>
