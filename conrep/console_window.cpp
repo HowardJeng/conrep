@@ -80,7 +80,6 @@ namespace console {
 
         set_z_order(settings.z_order);
 
-        // Direct3D stuff
         if (maximize_) {
           client_dim = get_client_dim(max_window_dim, scrollbar_width_, WINDOW_STYLE);
         }
@@ -310,11 +309,8 @@ namespace console {
         // Profiler indicates that SetWindowText() is sufficiently slower than GetWindowtext() that checking if
         //   the text is the same first makes sense
         TCHAR window_text[BUFFER_SIZE] = {};
-        if (!GetWindowText(get_hwnd(), window_text, BUFFER_SIZE)) {
-          DWORD err = GetLastError();
-          if (err != 0) WIN_EXCEPT2("Failed call to GetWindowText(). ", err);
-        }
-        if (_tcsncmp(console_title, window_text, BUFFER_SIZE) == 0) return;
+        if (GetWindowText(get_hwnd(), window_text, BUFFER_SIZE) &&
+            !_tcsncmp(console_title, window_text, BUFFER_SIZE)) return;
 
         if (!SetWindowText(get_hwnd(), console_title)) WIN_EXCEPT("Failed call to SetWindowText(). ");
       }
