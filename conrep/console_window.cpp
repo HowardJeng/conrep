@@ -89,6 +89,7 @@ namespace console {
 
         // start the machinery running
         state_ = RUNNING;
+        SetForegroundWindow(get_hwnd()); // no error check as it's not necessarily an error for this to fail
         if (!SetTimer(get_hwnd(), TIMER_REPAINT, REPAINT_TIME, 0)) WIN_EXCEPT("Failed SetTimer() call. ");
         if (!UpdateWindow(get_hwnd())) WIN_EXCEPT("Failed UpdateWindow() call. ");
       }
