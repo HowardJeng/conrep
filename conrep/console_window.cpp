@@ -89,7 +89,10 @@ namespace console {
 
         // start the machinery running
         state_ = RUNNING;
-        SetForegroundWindow(get_hwnd()); // no error check as it's not necessarily an error for this to fail
+        if (!SetForegroundWindow(get_hwnd())) {
+          DWORD err = GetLastError();
+          if (err != 0) WIN_EXCEPT2("Failed call to SetForegroundWindow(). ", err);
+        }
         if (!SetTimer(get_hwnd(), TIMER_REPAINT, REPAINT_TIME, 0)) WIN_EXCEPT("Failed SetTimer() call. ");
         if (!UpdateWindow(get_hwnd())) WIN_EXCEPT("Failed UpdateWindow() call. ");
       }
@@ -170,17 +173,6 @@ namespace console {
         text_renderer_.resize_buffers(pl.resize(console_dim));
       }
 
-      BOOL on_create(void) {
-        ASSERT(state_ == INITIALIZING);
-
-        if (!SetForegroundWindow(get_hwnd())) {
-          DWORD err = GetLastError();
-          if (err != 0) WIN_EXCEPT2("Failed call to SetForegroundWindow(). ", err);
-        }
-          
-        return TRUE;
-      }
-        
       BOOL draw_background_enum_proc_impl(HMONITOR hMonitor, HDC, LPRECT lprcMonitor) {
         POINT p = { 0, 0 };
         if (!ClientToScreen(get_hwnd(), &p)) WIN_EXCEPT("Failed call to ClientToScreen(). ");
