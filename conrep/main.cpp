@@ -2,6 +2,7 @@
 // contains the entry point and initialization for application
 
 #include "windows.h"
+#include <crtdbg.h>
 #include <dbghelp.h>
 
 #include <iostream>
@@ -294,6 +295,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPTSTR lpCmdLine,
                      int nCmdShow) {
+  _CrtSetDbgFlag (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
   disable_process_callback_filter();
   tstring exe_dir = get_branch_from_path(get_module_path());
   SymInit sym;

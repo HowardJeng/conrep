@@ -173,6 +173,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>gdiplus.lib;d3d9.lib;D3dx9.lib;dxerr.lib;dbghelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ShowProgress>NotSet</ShowProgress>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>Compatibility.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
