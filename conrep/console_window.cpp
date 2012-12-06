@@ -30,7 +30,12 @@ namespace console {
 
   class ConsoleWindowImpl : public IConsoleWindow, public Window<ConsoleWindowImpl> {
     public:
-      ConsoleWindowImpl(HWND hub, HINSTANCE hInstance, Settings settings, RootPtr root, const tstring & exe_dir, tstring & message)
+      ConsoleWindowImpl(HWND hub, 
+                        HINSTANCE hInstance, 
+                        Settings settings, 
+                        RootPtr root, 
+                        const tstring & exe_dir, 
+                        tstring & message)
         : Window<ConsoleWindowImpl>(hInstance, WINDOW_STYLE, exe_dir, message, _T("")),
           hub_(hub),
           root_(root), 
@@ -38,7 +43,6 @@ namespace console {
           active_(true),
           state_(INITIALIZING),
           maximize_(settings.maximize),
-          console_visible_(false),
           scrollbar_width_(GetSystemMetrics(SM_CXVSCROLL)),
           snap_distance_(settings.snap_distance),
           device_(root->device()),
@@ -55,7 +59,9 @@ namespace console {
 
         // window size stuff
         Dimension max_window_dim = get_max_window_dim(work_area_);
-        Dimension max_console_dim = text_renderer_.console_dim_from_window_size(max_window_dim, scrollbar_width_, WINDOW_STYLE);
+        Dimension max_console_dim = text_renderer_.console_dim_from_window_size(max_window_dim, 
+                                                                                scrollbar_width_, 
+                                                                                WINDOW_STYLE);
 
         Dimension console_dim = min(Dimension(settings.columns, settings.rows), max_console_dim);
         text_renderer_.resize_buffers(console_dim);
@@ -147,7 +153,6 @@ namespace console {
       WindowState state_;
         
       bool maximize_;        // if the window was created to cover work area
-      bool console_visible_; // if the console associated with the shell process is visible
         
       INT scrollbar_width_;
       int snap_distance_; // distance to edges of work area before window adjustment
@@ -428,23 +433,15 @@ namespace console {
         }
       }
         
-      void toggle_console_visible(void) {
-        console_visible_ = !console_visible_;
-        // ShowWindow()'s return value doesn't contain error information so can be ignored
-        if (console_visible_) {
-          ShowWindow(shell_process_.window_handle(), SW_SHOW);
-        } else {
-          ShowWindow(shell_process_.window_handle(), SW_HIDE);
-        }
-      }
-        
       void change_font(void) {
         ASSERT(state_ == RUNNING);
         if (text_renderer_.choose_font(device_, get_hwnd())) {
           state_ = RESETTING;
           if (maximize_) {
             Dimension window_dim = get_max_window_dim(work_area_);
-            Dimension console_dim = text_renderer_.console_dim_from_window_size(window_dim, scrollbar_width_, WINDOW_STYLE);
+            Dimension console_dim = text_renderer_.console_dim_from_window_size(window_dim, 
+                                                                                scrollbar_width_, 
+                                                                                WINDOW_STYLE);
 
             if (ProcessLock pl = shell_process_) {
               resize_console(console_dim, pl);
@@ -500,7 +497,7 @@ namespace console {
               WIN_EXCEPT("Failed call to PostMessage().");
             break;
           case ID_SHOWCONSOLE:
-            toggle_console_visible();
+            shell_process_.toggle_console_visible();
             break;
           case ID_SHOWEXTENDEDCHARACTERS:
             text_renderer_.toggle_extended_chars();
@@ -575,7 +572,9 @@ namespace console {
         text_renderer_.adjust(device_, settings);
         if (maximize_) {
           Dimension window_dim = get_max_window_dim(work_area_);
-          Dimension console_dim = text_renderer_.console_dim_from_window_size(window_dim, scrollbar_width_, WINDOW_STYLE);
+          Dimension console_dim = text_renderer_.console_dim_from_window_size(window_dim, 
+                                                                              scrollbar_width_, 
+                                                                              WINDOW_STYLE);
 
           if (ProcessLock pl = shell_process_) {
             resize_console(console_dim, pl);
@@ -631,6 +630,7 @@ namespace console {
             { state_ = DEAD;
               HWND hWnd = get_hwnd();
               LRESULT ret_val = Window<ConsoleWindowImpl>::actual_wnd_proc(Msg, wParam, lParam);
+              // this SendMesssage() call will cause the C++ object for the class to be destroyed
               SendMessage(hub_, CRM_CONSOLE_CLOSE, 0, reinterpret_cast<LPARAM>(hWnd));
               return ret_val;
             }
@@ -660,7 +660,7 @@ namespace console {
             return NULL;
           case WM_NCRBUTTONUP:
             { POINTS p = MAKEPOINTS(lParam);
-              menu_->set_console_visible(console_visible_);
+              menu_->set_console_visible(shell_process_.is_console_visible());
               menu_->set_z_order(z_order_);
               text_renderer_.set_menu_options(menu_);
               menu_->display(get_hwnd(), p);

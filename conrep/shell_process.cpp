@@ -18,7 +18,12 @@ namespace console {
 
   ShellProcess::ShellProcess(Settings & settings)
     : process_id_(0),
-      window_handle_(0)
+      window_handle_(0),
+      #ifdef DEBUG
+        console_visible_(true)
+      #else
+        console_visible_(false)
+      #endif
   {
     do_construct1(settings);
   }
@@ -111,6 +116,20 @@ namespace console {
   HANDLE ShellProcess::process_handle(void) const {
     ASSERT(process_handle_ != NULL);
     return process_handle_;
+  }
+      
+  bool ShellProcess::is_console_visible(void) const {
+    return console_visible_;
+  }
+
+  void ShellProcess::toggle_console_visible(void) {
+    console_visible_ = !console_visible_;
+    // ShowWindow()'s return value doesn't contain error information so can be ignored
+    if (console_visible_) {
+      ShowWindow(window_handle_, SW_SHOW);
+    } else {
+      ShowWindow(window_handle_, SW_HIDE);
+    }
   }
 
   bool ShellProcess::attach(void) {

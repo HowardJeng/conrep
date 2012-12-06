@@ -29,6 +29,9 @@ namespace console {
         
       HWND window_handle(void) const;
       HANDLE process_handle(void) const;
+
+      bool is_console_visible(void) const;
+      void toggle_console_visible(void);
     private:
       ShellProcess(const ShellProcess &);
       ShellProcess & operator=(const ShellProcess &);
@@ -37,6 +40,7 @@ namespace console {
       CHandle stdout_handle_;
       DWORD   process_id_;
       HWND    window_handle_;
+      bool    console_visible_; // if the console associated with the shell process is visible
         
       static int attach_count_;
 
