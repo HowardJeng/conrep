@@ -627,10 +627,13 @@ namespace console {
           case WM_COMMAND:
             on_command(LOWORD(wParam));
             return 0;
-          case WM_DESTROY:
-            state_ = DEAD;
-            SendMessage(hub_, CRM_CONSOLE_CLOSE, 0, reinterpret_cast<LPARAM>(get_hwnd()));
-            break;
+          case WM_DESTROY: 
+            { state_ = DEAD;
+              HWND hWnd = get_hwnd();
+              LRESULT ret_val = Window<ConsoleWindowImpl>::actual_wnd_proc(Msg, wParam, lParam);
+              SendMessage(hub_, CRM_CONSOLE_CLOSE, 0, reinterpret_cast<LPARAM>(hWnd));
+              return ret_val;
+            }
           case WM_MOVE:
             on_move(lParam);
             return 0;

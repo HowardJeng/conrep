@@ -60,7 +60,7 @@ namespace console {
           case WM_DESTROY:
             // Setting window proc to DefWindowProc allows the C++ object for
             //   the window to be deleted immediately.
-            set_wndproc(get_hwnd(), &DefWindowProc, true);
+            set_wndproc(hWnd_, &DefWindowProc, true);
             break;
         }
         return DefWindowProc(hWnd_, Msg, wParam, lParam);
