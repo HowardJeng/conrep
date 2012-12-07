@@ -15,11 +15,11 @@ namespace console {
   class ProcessLock;
   
   // ProcessLock should be considered to be part of the public interface of 
-  //   IShellProcess. Since there are function calls in the IShellProcess
+  //   ShellProcess. Since there are function calls in the ShellProcess
   //   that should only be called between attach() and detach() calls, we
   //   enforce that restriction with the type system by making those calls
   //   only possible through the ProcessLock class. It also guarantees the
-  //   call of IShellProcess::detach() in the event of an exception.
+  //   call of ShellProcess::detach() in the event of an exception.
   class ShellProcess {
     public:
       ShellProcess(Settings & settings);
@@ -47,8 +47,7 @@ namespace console {
       bool attach(void);
       void detach(void);
         
-      void do_construct1(Settings & settings);
-      void do_construct2(Settings & settings);
+      void create_shell_process(Settings & settings);
         
       void get_console_info(const Dimension & console_dim, CharInfoBuffer & buffer, COORD & cursor_pos);
       Dimension resize(Dimension console_dim);

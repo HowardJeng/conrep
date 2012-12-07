@@ -3,6 +3,8 @@
 
 #include "shell_process.h"
 
+#include <functional>
+
 #include "assert.h"
 #include "atl.h"
 #include "char_info_buffer.h"
@@ -16,6 +18,20 @@ using namespace ATL;
 namespace console {
   int ShellProcess::attach_count_ = 0;
 
+  class Cleaner {
+    public:
+      typedef void (ShellProcess::*MemFn)(void);
+
+      Cleaner(MemFn fn, ShellProcess * obj) : fn_(fn), obj_(obj) {}
+      ~Cleaner() { (obj_->*fn_)(); }
+    private:
+      MemFn fn_;
+      ShellProcess * obj_;
+
+      Cleaner(const Cleaner &);
+      Cleaner & operator=(const Cleaner &);
+  };
+
   ShellProcess::ShellProcess(Settings & settings)
     : process_id_(0),
       window_handle_(0),
@@ -25,10 +41,6 @@ namespace console {
         console_visible_(false)
       #endif
   {
-    do_construct1(settings);
-  }
-    
-  void ShellProcess::do_construct1(Settings & settings) {
     ASSERT(!settings.shell.empty());
     ASSERT(!attach_count_);
       
@@ -36,16 +48,14 @@ namespace console {
     //   shell process.
     if (!AllocConsole()) WIN_EXCEPT("Failed call to AllocConsole(). ");
     ++attach_count_;
-      
-    __try {
-      do_construct2(settings);
-    } __finally {
-      detach();
-      ASSERT(!attach_count_);
+    {
+      Cleaner cl(&ShellProcess::detach, this);
+      create_shell_process(settings);
     }
+    ASSERT(!attach_count_);
   }
     
-  void ShellProcess::do_construct2(Settings & settings) {
+  void ShellProcess::create_shell_process(Settings & settings) {
     tstring command_line(settings.shell);
     if (!settings.shell_arguments.empty()) {
       command_line += _T(" ");
