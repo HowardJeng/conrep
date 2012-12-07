@@ -248,6 +248,7 @@
     </ClCompile>
     <ClCompile Include="assert.cpp" />
     <ClCompile Include="char_info_buffer.cpp" />
+    <ClCompile Include="color_table.cpp" />
     <ClCompile Include="console_util.cpp" />
     <ClCompile Include="console_window.cpp" />
     <ClCompile Include="context_menu.cpp" />
@@ -272,6 +273,7 @@
     <ClInclude Include="assert.h" />
     <ClInclude Include="atl.h" />
     <ClInclude Include="char_info_buffer.h" />
+    <ClInclude Include="color_table.h" />
     <ClInclude Include="console_util.h" />
     <ClInclude Include="console_window.h" />
     <ClInclude Include="context_menu.h" />

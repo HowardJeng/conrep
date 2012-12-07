@@ -101,6 +101,8 @@ namespace console {
       void set_device_lost(void);
       
       HRESULT try_recover(void);
+
+      ColorTable & get_color_table(void);
     private:
       Direct3DPtr iface_;
       DevicePtr   device_;
@@ -108,6 +110,8 @@ namespace console {
       TexturePtr  white_texture_;
       std::map<HMONITOR, TexturePtr> background_textures_;
       bool device_lost_;
+
+      ColorTable color_table_;
     
       Direct3DRoot(const Direct3DRoot &);
       Direct3DRoot & operator=(const Direct3DRoot &);
@@ -464,6 +468,10 @@ namespace console {
     } else {
       return hr;
     }
+  }
+
+  ColorTable & Direct3DRoot::get_color_table(void) {
+    return color_table_;
   }
 
   Direct3DRoot::~Direct3DRoot() {

@@ -4,6 +4,7 @@
 
 #include "assert.h"
 #include "char_info_buffer.h"
+#include "color_table.h"
 #include "console_util.h"
 #include "context_menu.h"
 #include "d3root.h"
@@ -15,29 +16,6 @@
 #include "windows.h"
 
 namespace console {
-  const int CONSOLE_COLORS = 16; // number of different colors that a console window
-                                  //   can display
-
-  // colors used for console text
-  const D3DCOLOR colors[CONSOLE_COLORS] = {
-    D3DCOLOR_XRGB(0x00, 0x00, 0x00),
-    D3DCOLOR_XRGB(0x00, 0x00, 0x80),
-    D3DCOLOR_XRGB(0x00, 0x80, 0x00),
-    D3DCOLOR_XRGB(0x00, 0x80, 0x80),
-    D3DCOLOR_XRGB(0x80, 0x00, 0x00),
-    D3DCOLOR_XRGB(0x80, 0x00, 0x80),
-    D3DCOLOR_XRGB(0x80, 0x80, 0x00),
-    D3DCOLOR_XRGB(0xC0, 0xC0, 0xC0),
-    D3DCOLOR_XRGB(0x80, 0x80, 0x80), 
-    D3DCOLOR_XRGB(0x00, 0x00, 0xFF),
-    D3DCOLOR_XRGB(0x00, 0xFF, 0x00),
-    D3DCOLOR_XRGB(0x00, 0xFF, 0xFF),
-    D3DCOLOR_XRGB(0xFF, 0x00, 0x00),
-    D3DCOLOR_XRGB(0xFF, 0x00, 0xFF),
-    D3DCOLOR_XRGB(0xFF, 0xFF, 0x00),
-    D3DCOLOR_XRGB(0xFF, 0xFF, 0xFF)
-  };
-
   TextRenderer::TextRenderer(RootPtr & root, const Settings & settings)
     : white_texture_(root->white_texture()),
       font_(create_font(root->device(), settings.font_name, settings.font_size * POINT_SIZE_SCALE)),
@@ -48,7 +26,8 @@ namespace console {
       intensify_(settings.intensify),
       active_pre_alpha_(static_cast<unsigned char>(settings.active_pre_alpha)),
       inactive_pre_alpha_(static_cast<unsigned char>(settings.inactive_pre_alpha)),
-      font_size_(settings.font_size * POINT_SIZE_SCALE)
+      font_size_(settings.font_size * POINT_SIZE_SCALE),
+      color_table_(root->get_color_table())
   {
     get_logfont(font_, &lf_);
     ASSERT(settings.active_pre_alpha <= std::numeric_limits<unsigned char>::max());
@@ -153,7 +132,7 @@ namespace console {
 
   void TextRenderer::resize_buffers(Dimension new_console_dim) {
     console_dim_ = new_console_dim;
-    size_t new_size = new_console_dim.width * CONSOLE_COLORS;
+    size_t new_size = new_console_dim.width * ColorTable::CONSOLE_COLORS;
     if (new_size > plane_buffer_.size()) {
       plane_buffer_.reserve(new_size);
       plane_buffer_.resize(plane_buffer_.capacity());
@@ -207,18 +186,18 @@ namespace console {
           for (int j = 0; j < console_dim_.width; ++j) {
             int offset = i * console_dim_.width + j;
             int bg_index = (char_info_buffer_[offset].Attributes >> 4) & 0xf;
-            if (bg_index) draw_block(sprite, j, i, colors[bg_index]);
+            if (bg_index) draw_block(sprite, j, i, color_table_[bg_index]);
           }
         }
 
-        int plane_usage[CONSOLE_COLORS];
-        int first_plane[CONSOLE_COLORS];
+        int plane_usage[ColorTable::CONSOLE_COLORS];
+        int first_plane[ColorTable::CONSOLE_COLORS];
 
-        ASSERT(((plane_buffer_.end() - plane_buffer_.begin()) % CONSOLE_COLORS) == 0);
+        ASSERT(((plane_buffer_.end() - plane_buffer_.begin()) % ColorTable::CONSOLE_COLORS) == 0);
         std::fill(plane_buffer_.begin(), plane_buffer_.end(), _T(' '));
         for (int i = 0; i < console_dim_.height; ++i) {
-          std::fill_n(plane_usage, CONSOLE_COLORS, 0);
-          std::fill_n(first_plane, CONSOLE_COLORS, -1);
+          std::fill_n(plane_usage, ColorTable::CONSOLE_COLORS, 0);
+          std::fill_n(first_plane, ColorTable::CONSOLE_COLORS, -1);
           for (int j = 0; j < console_dim_.width; ++j) {
             int offset = i * console_dim_.width + j;
             #ifdef UNICODE
@@ -238,7 +217,7 @@ namespace console {
               if (first_plane[fg_index] == -1) first_plane[fg_index] = j;
             }
           }
-          for (int j = 0; j < CONSOLE_COLORS; ++j) {
+          for (int j = 0; j < ColorTable::CONSOLE_COLORS; ++j) {
             if (plane_usage[j]) {
               int f = first_plane[j];
               RECT r = {
@@ -254,7 +233,7 @@ namespace console {
                                             length,
                                             &r,
                                             DT_LEFT | DT_TOP | DT_NOCLIP | DT_SINGLELINE,
-                                            colors[j]);
+                                            color_table_[j]);
               if (FAILED(hr)) DX_EXCEPT("Failed call to ID3DXFont::DrawText(). ", hr);
               std::fill_n(plane_buffer_.begin() + line_start, length, _T(' '));
             }

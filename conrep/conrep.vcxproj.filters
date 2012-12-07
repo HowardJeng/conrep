@@ -105,6 +105,9 @@
     <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\winmain.cpp">
       <Filter>Source Files\boost program options</Filter>
     </ClCompile>
+    <ClCompile Include="color_table.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="conrep.rc">
@@ -197,6 +200,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="window.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="color_table.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

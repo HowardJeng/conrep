@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "char_info_buffer.h"
+#include "color_table.h"
 #include "context_menu.h"
 #include "d3root.h"
 #include "dimension.h"
@@ -52,6 +53,8 @@ namespace console {
       unsigned char inactive_pre_alpha_;
 
       int font_size_; // in units of POINT_SIZE_SCALE of a point
+
+      ColorTable & color_table_;
 
       TextRenderer(const TextRenderer &);
       TextRenderer & operator=(const TextRenderer &);

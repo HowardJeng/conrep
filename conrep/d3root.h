@@ -7,6 +7,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "atl.h"
+#include "color_table.h"
 #include "windows.h"
 
 namespace console {
@@ -58,6 +59,8 @@ namespace console {
       virtual void set_device_lost(void) = 0;
       
       virtual HRESULT try_recover(void) = 0;
+
+      virtual ColorTable & get_color_table(void) = 0;
   };
   typedef boost::shared_ptr<IDirect3DRoot> RootPtr;
   RootPtr get_direct3d_root(HWND hwnd);
