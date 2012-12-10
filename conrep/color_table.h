@@ -12,10 +12,14 @@ namespace console {
 
       ColorTable();
       D3DCOLOR operator[](size_t index) const;
+
+      void poll_registry_change(void);
     private:
       D3DCOLOR colors_[CONSOLE_COLORS];
       CRegKey console_;
       CHandle event_;
+
+      void assign_table(void);
 
       ColorTable(const ColorTable &);
       ColorTable & operator=(const ColorTable &);

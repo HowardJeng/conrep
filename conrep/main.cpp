@@ -91,38 +91,90 @@ class COMInit {
     COMInit & operator=(const COMInit &);
 };
 
+const TCHAR APP_MUTEX_NAME[]  = _T("conrep{7c1123af-2ffe-41e7-aebd-da66f803aca7}");
+const TCHAR MMAP_NAME[]       = _T("conrep{4b581c5e-5f5a-4fb7-b185-1252cea83d92}");
+const TCHAR MMAP_MUTEX_NAME[] = _T("conrep{2ba41d85-95c8-46b6-82a6-0d6b11a92e5f}");
+
+class MutexReleaser {
+  public:
+    MutexReleaser(HANDLE mutex, bool acquire) : mutex_(mutex) {
+      if (!acquire) return;
+      for (;;) {
+        DWORD ret_val = WaitForSingleObject(mutex_, INFINITE);
+        ASSERT(ret_val != WAIT_TIMEOUT);
+        if (ret_val == WAIT_FAILED) {
+          WIN_EXCEPT("Failed call to WaitForSingleObject(). ");
+        } else if (ret_val == WAIT_ABANDONED) {
+          continue;
+        } else {
+          ASSERT(ret_val == WAIT_OBJECT_0);
+          return;
+        }
+      }
+    }
+    ~MutexReleaser() { 
+      ReleaseMutex(mutex_); 
+    }
+  private:
+    HANDLE mutex_;
+    MutexReleaser(const MutexReleaser &);
+    MutexReleaser & operator=(const MutexReleaser &);
+};
+
 // Wraps a file mapping handle to be a HWND reference
 class MMapHWND {
   public:
-    MMapHWND(HANDLE mapping) : master_(false) {
-      void * ptr = MapViewOfFile(mapping, FILE_MAP_WRITE, 0, 0, sizeof(HWND));
+    MMapHWND(void) : master_(false) {
+      HANDLE file_mapping_handle = CreateFileMapping(INVALID_HANDLE_VALUE, // no backing file
+                                                     0,
+                                                     PAGE_READWRITE,
+                                                     0,
+                                                     sizeof(HWND),
+                                                     MMAP_NAME);
+      if (file_mapping_handle == NULL) WIN_EXCEPT("Failure in CreateFileMapping() call.");
+      file_mapping_.Attach(file_mapping_handle);
+
+      HANDLE mutex = CreateMutex(NULL, FALSE, MMAP_MUTEX_NAME);
+      if (mutex == NULL) WIN_EXCEPT("Failed call to CreateMutex(). ");
+      mutex_.Attach(mutex);
+
+      void * ptr = MapViewOfFile(file_mapping_handle, FILE_MAP_WRITE, 0, 0, sizeof(HWND));
       if (!ptr) WIN_EXCEPT("Failure in MapViewOfFile() call.");
       ptr_ = reinterpret_cast<HWND *>(ptr);
+
     }
     ~MMapHWND() {
       // Null out the hwnd so that a process starting as this one closes doesn't
       //   try to connect to a dead window.
-      if (master_) *ptr_ = 0; 
-      BOOL r = UnmapViewOfFile(const_cast<HWND *>(ptr_));
+      if (master_) {
+        MutexReleaser(mutex_, true);
+        *ptr_ = 0;
+      }
+      BOOL r = UnmapViewOfFile(ptr_);
       ASSERT(r);
     }
-    operator HWND() const { return *ptr_; }
-    MMapHWND & operator=(HWND rhs) { 
-      *ptr_ = rhs; 
-      master_ = true; 
-      return *this; 
+    HWND get(void) const {
+      HWND to_return;
+      { MutexReleaser releaser(mutex_, true);
+        to_return = *ptr_;
+      }
+      return to_return; 
+    }
+    void set(HWND hWnd) {
+      MutexReleaser releaser(mutex_, true);
+      ASSERT(*ptr_ == 0);
+      *ptr_ = hWnd;
+      master_ = true;
     }
   private:
-    volatile HWND * ptr_;
+    CHandle file_mapping_;
+    CHandle mutex_;
+    HWND * ptr_;
     bool master_;
+
+    MMapHWND(const MMapHWND &);
+    MMapHWND & operator=(const MMapHWND &);
 };
-
-// Using session namespace kernal objects will allow different users to run
-//   separate instances under XP fast user switching. This may not be a good idea
-//   as this application is a huge resource hog.
-const TCHAR MUTEX_NAME[] = _T("Local\\conrep{7c1123af-2ffe-41e7-aebd-da66f803aca7}");
-const TCHAR MMAP_NAME[]  = _T("Local\\conrep{4b581c5e-5f5a-4fb7-b185-1252cea83d92}");
-
 
 MsgDataPtr get_message_data(bool adjust, const TCHAR * cmd_line) {
   size_t length = _tcslen(cmd_line);
@@ -136,6 +188,36 @@ MsgDataPtr get_message_data(bool adjust, const TCHAR * cmd_line) {
   return MsgDataPtr(msg, &free);
 }
 
+void try_print_help(void) {
+  BOOL r = AttachConsole(ATTACH_PARENT_PROCESS);
+  if (r) {
+    if (!freopen("CONOUT$", "w", stdout)) MISC_EXCEPT("Error opening console output. ");
+    print_help();
+    if (!FreeConsole()) WIN_EXCEPT("Failed call to FreeConsole(). ");
+  }
+}
+
+void send_data(bool adjust, LPCTSTR lpCmdLine, HWND hWnd) {
+  MsgDataPtr msg_data = get_message_data(adjust, lpCmdLine);
+  COPYDATASTRUCT cds = {
+    0,
+    static_cast<DWORD>(msg_data->size),
+    &*msg_data
+  };
+  BOOL r = AttachConsole(ATTACH_PARENT_PROCESS);
+  if (r) {
+    msg_data->console_window = GetConsoleWindow();
+    SendMessage(hWnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds));
+    FreeConsole();
+  } else {
+    if (adjust) {
+      MessageBox(NULL, _T("There doesn't seem to be an associated conrep window to adjust"), _T("--adjust error"), MB_OK);
+    } else {
+      SendMessage(hWnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds));
+    }
+  }
+}
+
 // actual logic for winmain; separates out C++ exception handling from SEH exception
 //   handling 
 int do_winmain1(HINSTANCE hInstance, 
@@ -147,57 +229,27 @@ int do_winmain1(HINSTANCE hInstance,
                 bool & execute_filter) {
   CommandLineOptions opt(lpCmdLine);
   if (opt.help) {
-    BOOL r = AttachConsole(ATTACH_PARENT_PROCESS);
-    if (r) {
-      if (!freopen("CONOUT$", "w", stdout)) MISC_EXCEPT("Error opening console output. ");
-      print_help();
-      if (!FreeConsole()) WIN_EXCEPT("Failed call to FreeConsole(). ");
-    }
+    try_print_help();
     return 0;
   }
 
   // Use a mutex object to ensure only one instance of the application is active
   //   at a time; this allows different console windows to share resources like
   //   background textures
-  HANDLE mutex_handle = CreateMutex(0, TRUE, MUTEX_NAME);
+  HANDLE mutex_handle = CreateMutex(0, TRUE, APP_MUTEX_NAME);
   if (!mutex_handle) WIN_EXCEPT("Failed call to CreateMutex(). ");
   CHandle mutex(mutex_handle);
   DWORD err = GetLastError();
 
-  HANDLE file_mapping_handle = CreateFileMapping(INVALID_HANDLE_VALUE, // no backing file
-                                                 0,
-                                                 PAGE_READWRITE,
-                                                 0,
-                                                 sizeof(HWND),
-                                                 MMAP_NAME);
-  if (file_mapping_handle == NULL) WIN_EXCEPT("Failure in CreateFileMapping() call.");
-  CHandle file_mapping(file_mapping_handle);
-
-  MMapHWND hwnd(file_mapping);
+  MMapHWND mmap;
   if (err == ERROR_ALREADY_EXISTS) {
     for (;;) {
       // If two instances of the program are started close to each other then one could
       //   try reading the HWND value before it is set. Fortunately the shared memory
       //   area is guaranteed to be zeroed, and zero isn't a valid HWND value.
-      if (hwnd != 0) {
-        MsgDataPtr msg_data = get_message_data(opt.adjust, lpCmdLine);
-        COPYDATASTRUCT cds = {
-          0,
-          static_cast<DWORD>(msg_data->size),
-          &*msg_data
-        };
-        BOOL r = AttachConsole(ATTACH_PARENT_PROCESS);
-        if (r) {
-          msg_data->console_window = GetConsoleWindow();
-          SendMessage(hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds));
-          FreeConsole();
-        } else {
-          if (opt.adjust) {
-            MessageBox(NULL, _T("There doesn't seem to be an associated conrep window to adjust"), _T("--adjust error"), MB_OK);
-          } else {
-            SendMessage(hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds));
-          }
-        }
+      HWND hWnd = mmap.get();
+      if (hWnd != 0) {
+        send_data(opt.adjust, lpCmdLine, hWnd);
         return 0;
       } else {
         DWORD ret_val = WaitForSingleObject(mutex, 100);
@@ -219,6 +271,7 @@ int do_winmain1(HINSTANCE hInstance,
       }
     }
   }
+  MutexReleaser releaser(mutex, false);
 
   if (opt.adjust) {
     MessageBox(NULL, _T("No existing conrep window to adjust."), _T("--adjust error"), MB_OK);
@@ -233,7 +286,7 @@ int do_winmain1(HINSTANCE hInstance,
   execute_filter = settings.execute_filter;
 
   if (!root_window->spawn_window(settings)) return 0;
-  hwnd = root_window->hwnd(); // place window handle in shared memory
+  mmap.set(root_window->hwnd()); // place window handle in shared memory
 
   for (;;) {
     MSG msg;

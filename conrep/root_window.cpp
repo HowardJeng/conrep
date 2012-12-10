@@ -17,6 +17,7 @@
 #include "program_options.h"
 #include "reg.h"
 #include "settings.h"
+#include "timer.h"
 #include "win_util.h"
 #include "window.h"
 
@@ -121,6 +122,8 @@ namespace console {
     try {
       root_ = get_direct3d_root(get_hwnd());
       ASSERT(root_ != nullptr);
+
+      if (!SetTimer(get_hwnd(), TIMER_POLL_REGISTRY, POLL_TIME, 0)) WIN_EXCEPT("Failed SetTimer() call. ");
     } catch (...) {
       // if this fails reset the WndProc to DefWindowProc() as the object
       //   invariants won't hold during subsequent window messages that come
@@ -194,6 +197,10 @@ namespace console {
           }
           return TRUE;
         }
+        break;
+      case WM_TIMER:
+        root_->get_color_table().poll_registry_change();
+        if (!SetTimer(get_hwnd(), TIMER_POLL_REGISTRY, POLL_TIME, 0)) WIN_EXCEPT("Failed SetTimer() call. ");
         break;
       case WM_DESTROY:
         PostQuitMessage(0);
