@@ -101,10 +101,12 @@ class MutexReleaser {
       if (!acquire) return;
       for (;;) {
         DWORD ret_val = WaitForSingleObject(mutex_, INFINITE);
+        // with an infinite wait time should never get WAIT_TIMEOUT
         ASSERT(ret_val != WAIT_TIMEOUT);
         if (ret_val == WAIT_FAILED) {
           WIN_EXCEPT("Failed call to WaitForSingleObject(). ");
         } else if (ret_val == WAIT_ABANDONED) {
+          // if the mutex was abandoned it should be unsignaled, try to acquire again
           continue;
         } else {
           ASSERT(ret_val == WAIT_OBJECT_0);
@@ -141,7 +143,6 @@ class MMapHWND {
       void * ptr = MapViewOfFile(file_mapping_handle, FILE_MAP_WRITE, 0, 0, sizeof(HWND));
       if (!ptr) WIN_EXCEPT("Failure in MapViewOfFile() call.");
       ptr_ = reinterpret_cast<HWND *>(ptr);
-
     }
     ~MMapHWND() {
       // Null out the hwnd so that a process starting as this one closes doesn't
@@ -188,16 +189,18 @@ MsgDataPtr get_message_data(bool adjust, const TCHAR * cmd_line) {
   return MsgDataPtr(msg, &free);
 }
 
-void try_print_help(void) {
+int try_print_help(void) {
   BOOL r = AttachConsole(ATTACH_PARENT_PROCESS);
   if (r) {
     if (!freopen("CONOUT$", "w", stdout)) MISC_EXCEPT("Error opening console output. ");
     print_help();
     if (!FreeConsole()) WIN_EXCEPT("Failed call to FreeConsole(). ");
   }
+  return 0;
 }
 
-void send_data(bool adjust, LPCTSTR lpCmdLine, HWND hWnd) {
+int send_data(bool adjust, LPCTSTR lpCmdLine, HWND hWnd) {
+  ASSERT(hWnd != 0);
   MsgDataPtr msg_data = get_message_data(adjust, lpCmdLine);
   COPYDATASTRUCT cds = {
     0,
@@ -216,6 +219,7 @@ void send_data(bool adjust, LPCTSTR lpCmdLine, HWND hWnd) {
       SendMessage(hWnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds));
     }
   }
+  return 0;
 }
 
 // actual logic for winmain; separates out C++ exception handling from SEH exception
@@ -229,8 +233,7 @@ int do_winmain1(HINSTANCE hInstance,
                 bool & execute_filter) {
   CommandLineOptions opt(lpCmdLine);
   if (opt.help) {
-    try_print_help();
-    return 0;
+    return try_print_help();
   }
 
   // Use a mutex object to ensure only one instance of the application is active
@@ -249,25 +252,25 @@ int do_winmain1(HINSTANCE hInstance,
       //   area is guaranteed to be zeroed, and zero isn't a valid HWND value.
       HWND hWnd = mmap.get();
       if (hWnd != 0) {
-        send_data(opt.adjust, lpCmdLine, hWnd);
-        return 0;
+        return send_data(opt.adjust, lpCmdLine, hWnd);
+      }
+      DWORD ret_val = WaitForSingleObject(mutex, 100);
+      if (ret_val == WAIT_ABANDONED) {
+        // Original program closed before assigning an hwnd value. Mutex is now
+        //   unsignaled. Do another iteration through the loop and attempt to
+        //   acquire mutex ownership.
+        continue;
+      } else if (ret_val == WAIT_OBJECT_0) {
+        // Got the mutex, now the master process. Break out of the loop and go
+        //   through window creation.
+        break;
+      } else if (ret_val == WAIT_TIMEOUT) {
+        // Call timed out before either the existing process closing or
+        //   obtaining the mutex. Do another iteration through the loop.
+        continue;
       } else {
-        DWORD ret_val = WaitForSingleObject(mutex, 100);
-        if (ret_val == WAIT_ABANDONED) {
-          // Original program closed before assigning an hwnd value. Mutex is now
-          //   unsignaled. Do another iteration through the loop and attempt to
-          //   acquire mutex ownership.
-        } else if (ret_val == WAIT_OBJECT_0) {
-          // Got the mutex, now the master process. Break out of the loop and go
-          //   through window creation.
-          break;
-        } else if (ret_val == WAIT_TIMEOUT) {
-          // Call timed out before either the existing process closing or
-          //   obtaining the mutex. Do another iteration through the loop.
-        } else {
-          ASSERT(ret_val == WAIT_FAILED);
-          WIN_EXCEPT("Failed call to WaitForSingleObject().");
-        }
+        ASSERT(ret_val == WAIT_FAILED);
+        WIN_EXCEPT("Failed call to WaitForSingleObject().");
       }
     }
   }
