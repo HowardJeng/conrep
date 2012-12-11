@@ -6,6 +6,7 @@
 #include <dbghelp.h>
 
 #include <iostream>
+#include <functional>
 #include <sstream>
 #include <fstream>
 
@@ -28,17 +29,20 @@ void disable_process_callback_filter(void) {
   typedef BOOL (WINAPI *SetPolicyPtr)(DWORD dwFlags); 
   const DWORD PROCESS_CALLBACK_FILTER_ENABLED = 0x1;
 
-  HMODULE kernel32 = LoadLibraryA("kernel32.dll");
-  if (!kernel32) return;
-  GetPolicyPtr get_policy = (GetPolicyPtr)GetProcAddress(kernel32, "GetProcessUserModeExceptionPolicy"); 
-  if (!get_policy) return;
-  SetPolicyPtr set_policy = (SetPolicyPtr)GetProcAddress(kernel32, "SetProcessUserModeExceptionPolicy"); 
-  if (!set_policy) return;
-
-  DWORD flags; 
-  if (get_policy(&flags)) { 
-    set_policy(flags & ~PROCESS_CALLBACK_FILTER_ENABLED); 
-  } 
+  HMODULE kernel32 = LoadLibrary(_T("kernel32.dll"));
+  if (kernel32) {
+    GetPolicyPtr get_policy = (GetPolicyPtr)GetProcAddress(kernel32, "GetProcessUserModeExceptionPolicy"); 
+    if (get_policy) {
+      SetPolicyPtr set_policy = (SetPolicyPtr)GetProcAddress(kernel32, "SetProcessUserModeExceptionPolicy"); 
+      if (set_policy) {
+        DWORD flags; 
+        if (get_policy(&flags)) { 
+          set_policy(flags & ~PROCESS_CALLBACK_FILTER_ENABLED);
+        }
+      }
+    }
+    FreeLibrary(kernel32);
+  }
 }
 
 // RAII initializer for GDI+
@@ -95,10 +99,11 @@ const TCHAR APP_MUTEX_NAME[]  = _T("conrep{7c1123af-2ffe-41e7-aebd-da66f803aca7}
 const TCHAR MMAP_NAME[]       = _T("conrep{4b581c5e-5f5a-4fb7-b185-1252cea83d92}");
 const TCHAR MMAP_MUTEX_NAME[] = _T("conrep{2ba41d85-95c8-46b6-82a6-0d6b11a92e5f}");
 
+enum AcquireT { acquire };
 class MutexReleaser {
   public:
-    MutexReleaser(HANDLE mutex, bool acquire) : mutex_(mutex) {
-      if (!acquire) return;
+    MutexReleaser(HANDLE mutex) : mutex_(mutex) {}
+    MutexReleaser(HANDLE mutex, AcquireT) : mutex_(mutex) {
       for (;;) {
         DWORD ret_val = WaitForSingleObject(mutex_, INFINITE);
         // with an infinite wait time should never get WAIT_TIMEOUT
@@ -148,7 +153,7 @@ class MMapHWND {
       // Null out the hwnd so that a process starting as this one closes doesn't
       //   try to connect to a dead window.
       if (master_) {
-        MutexReleaser(mutex_, true);
+        MutexReleaser(mutex_, acquire);
         *ptr_ = 0;
       }
       BOOL r = UnmapViewOfFile(ptr_);
@@ -156,13 +161,14 @@ class MMapHWND {
     }
     HWND get(void) const {
       HWND to_return;
-      { MutexReleaser releaser(mutex_, true);
+      { MutexReleaser releaser(mutex_, acquire);
         to_return = *ptr_;
       }
       return to_return; 
     }
     void set(HWND hWnd) {
-      MutexReleaser releaser(mutex_, true);
+      ASSERT(!master_);
+      MutexReleaser releaser(mutex_, acquire);
       ASSERT(*ptr_ == 0);
       *ptr_ = hWnd;
       master_ = true;
@@ -214,7 +220,10 @@ int send_data(bool adjust, LPCTSTR lpCmdLine, HWND hWnd) {
     FreeConsole();
   } else {
     if (adjust) {
-      MessageBox(NULL, _T("There doesn't seem to be an associated conrep window to adjust"), _T("--adjust error"), MB_OK);
+      MessageBox(NULL,
+                 _T("There doesn't seem to be an associated conrep window to adjust"), 
+                 _T("--adjust error"), 
+                 MB_OK);
     } else {
       SendMessage(hWnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds));
     }
@@ -274,7 +283,7 @@ int do_winmain1(HINSTANCE hInstance,
       }
     }
   }
-  MutexReleaser releaser(mutex, false);
+  MutexReleaser releaser(mutex);
 
   if (opt.adjust) {
     MessageBox(NULL, _T("No existing conrep window to adjust."), _T("--adjust error"), MB_OK);
@@ -284,7 +293,7 @@ int do_winmain1(HINSTANCE hInstance,
   GDIPlusInit gdi_initializer;
   COMInit com_initializer;
   
-  std::auto_ptr<IRootWindow> root_window(get_root_window(hInstance, exe_dir, message));
+  RootWindowPtr root_window(get_root_window(hInstance, exe_dir, message));
   Settings settings(lpCmdLine, exe_dir.c_str());
   execute_filter = settings.execute_filter;
 

@@ -15,7 +15,7 @@ namespace console {
     virtual ~IContextMenu() = 0;
   };
     
-  typedef std::auto_ptr<IContextMenu> MenuPtr;
+  typedef std::unique_ptr<IContextMenu> MenuPtr;
   MenuPtr get_context_menu(HINSTANCE hInstance);
 }
 

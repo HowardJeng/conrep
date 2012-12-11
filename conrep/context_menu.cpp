@@ -74,9 +74,8 @@ namespace console {
       }
   };
   
-  std::auto_ptr<IContextMenu> get_context_menu(HINSTANCE hInstance) {
-    std::auto_ptr<IContextMenu> to_return(new Menu(hInstance));
-    return to_return;
+  MenuPtr get_context_menu(HINSTANCE hInstance) {
+    return MenuPtr(new Menu(hInstance));
   }
   
   IContextMenu::~IContextMenu() {}

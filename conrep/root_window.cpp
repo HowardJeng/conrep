@@ -220,9 +220,8 @@ namespace console {
 
   IRootWindow::~IRootWindow() {}
   
-  std::auto_ptr<IRootWindow> get_root_window(HINSTANCE hInstance, const tstring & exe_dir, tstring & message) {
+  RootWindowPtr get_root_window(HINSTANCE hInstance, const tstring & exe_dir, tstring & message) {
     if (!RootWindow::get_class_atom()) RootWindow::register_window_class(hInstance);
-    std::auto_ptr<IRootWindow> tmp(new RootWindow(hInstance, exe_dir, message));
-    return tmp;
+    return RootWindowPtr(new RootWindow(hInstance, exe_dir, message));
   }
 }
