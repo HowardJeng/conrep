@@ -149,6 +149,7 @@ namespace console {
         // I don't know why, but sometimes AttachConsole() can say the process has closed when it hasn't. So
         //   ignore errors that say it has and check if the process has closed another way.
         DWORD err = GetLastError();
+		if (err == 5) return false;
         if (err != 31) {
           WIN_EXCEPT2("Failed call to AttachConsole(). ", err);
         }

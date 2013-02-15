@@ -234,9 +234,7 @@ int send_data(bool adjust, LPCTSTR lpCmdLine, HWND hWnd) {
 // actual logic for winmain; separates out C++ exception handling from SEH exception
 //   handling 
 int do_winmain1(HINSTANCE hInstance, 
-                HINSTANCE,
                 LPTSTR lpCmdLine, 
-                int,
                 const tstring & exe_dir,
                 tstring & message,
                 bool & execute_filter) {
@@ -323,14 +321,12 @@ int do_winmain1(HINSTANCE hInstance,
 //   aren't allowable in function with SEH __try blocks, message is created by the
 //   caller and assigned in the filter by reference.
 int WINAPI do_winmain2(HINSTANCE hInstance,
-                       HINSTANCE hPrevInstance,
                        LPTSTR lpCmdLine,
-                       int nCmdShow,
                        const tstring & exe_dir,
                        tstring & message) {
   bool execute_filter = true;
   __try {
-    int ret_val = do_winmain1(hInstance, hPrevInstance, lpCmdLine, nCmdShow, exe_dir, message, execute_filter);
+    int ret_val = do_winmain1(hInstance, lpCmdLine, exe_dir, message, execute_filter);
     if (ret_val == EXIT_ABNORMAL_TERMINATION) {
       if (!message.empty()) {
         MessageBox(NULL,  message.c_str(), _T("Abnormal termination"), MB_OK); 
@@ -357,13 +353,13 @@ int WINAPI do_winmain2(HINSTANCE hInstance,
 //   destructors in a function with SEH exception handling
 #pragma warning(suppress: 28251)
 int WINAPI _tWinMain(HINSTANCE hInstance,
-                     HINSTANCE hPrevInstance,
+                     HINSTANCE,
                      LPTSTR lpCmdLine,
-                     int nCmdShow) {
+                     int) {
   _CrtSetDbgFlag (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
   disable_process_callback_filter();
   tstring exe_dir = get_branch_from_path(get_module_path());
   SymInit sym;
   tstring message;
-  return do_winmain2(hInstance, hPrevInstance, lpCmdLine, nCmdShow, exe_dir, message);
+  return do_winmain2(hInstance, lpCmdLine, exe_dir, message);
 }

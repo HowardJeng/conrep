@@ -72,41 +72,41 @@
     <ClCompile Include="text_renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\cmdline.cpp">
-      <Filter>Source Files\boost program options</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\config_file.cpp">
-      <Filter>Source Files\boost program options</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\convert.cpp">
-      <Filter>Source Files\boost program options</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\options_description.cpp">
-      <Filter>Source Files\boost program options</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\parsers.cpp">
-      <Filter>Source Files\boost program options</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\positional_options.cpp">
-      <Filter>Source Files\boost program options</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\split.cpp">
-      <Filter>Source Files\boost program options</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\utf8_codecvt_facet.cpp">
-      <Filter>Source Files\boost program options</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\value_semantic.cpp">
-      <Filter>Source Files\boost program options</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\variables_map.cpp">
-      <Filter>Source Files\boost program options</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_51_0\libs\program_options\src\winmain.cpp">
-      <Filter>Source Files\boost program options</Filter>
-    </ClCompile>
     <ClCompile Include="color_table.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\include\boost_1_53_0\libs\program_options\src\cmdline.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\include\boost_1_53_0\libs\program_options\src\config_file.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\include\boost_1_53_0\libs\program_options\src\convert.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\include\boost_1_53_0\libs\program_options\src\options_description.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\include\boost_1_53_0\libs\program_options\src\parsers.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\include\boost_1_53_0\libs\program_options\src\positional_options.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\include\boost_1_53_0\libs\program_options\src\split.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\include\boost_1_53_0\libs\program_options\src\utf8_codecvt_facet.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\include\boost_1_53_0\libs\program_options\src\value_semantic.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\include\boost_1_53_0\libs\program_options\src\variables_map.cpp">
+      <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\include\boost_1_53_0\libs\program_options\src\winmain.cpp">
+      <Filter>Source Files\boost program options</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
