@@ -3,6 +3,7 @@
 *.DS_Store
 
 #Visual Studio files
+pingme.txt
 *.[Oo]bj
 *.user
 *.aps
@@ -29,6 +30,7 @@ obj/
 [Bb]in
 [Dd]ebug*/
 [Rr]elease*/
+user32.pdb/
 
 #Project files
 [Bb]uild/
