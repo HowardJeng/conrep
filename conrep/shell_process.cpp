@@ -149,8 +149,9 @@ namespace console {
         // I don't know why, but sometimes AttachConsole() can say the process has closed when it hasn't. So
         //   ignore errors that say it has and check if the process has closed another way.
         DWORD err = GetLastError();
-		if (err == 5) return false;
-        if (err != 31) {
+		//  5 is access is denied, can happen with a closed console window
+		// 31 is device not functioning, can occur if trying to attach to a freshly created console window
+        if (err != 31 && err != 5) {
           WIN_EXCEPT2("Failed call to AttachConsole(). ", err);
         }
         DWORD ret = WaitForSingleObject(process_handle_, 0);

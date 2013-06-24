@@ -275,9 +275,23 @@ namespace console {
     } else if (sbd->style == CENTER) {
       draw_scaled(rect, sbd->wallpaper_texture, root->sprite_, center, 1.0f, 1.0f);
     } else if (sbd->style == ASPECT_PAD) {
-      draw_scaled(rect, sbd->wallpaper_texture, root->sprite_, center, min(x_scale, y_scale), min(x_scale, y_scale));
+      float scale = min(x_scale, y_scale);
+      draw_scaled(rect, sbd->wallpaper_texture, root->sprite_, center, scale, scale);
     } else if (sbd->style == ASPECT_CROP) {
-      draw_scaled(rect, sbd->wallpaper_texture, root->sprite_, center, max(x_scale, y_scale), max(x_scale, y_scale));
+      float scale = max(x_scale, y_scale);
+
+      OSVERSIONINFO osvi = {};
+      osvi.dwOSVersionInfoSize = sizeof(osvi);
+      if (!GetVersionEx(&osvi)) WIN_EXCEPT("Failed call to GetVersionEx(). ");
+
+      if (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion == 2) {
+        // Windows 8 displays Wallpaper off center in Fill mode
+        center.y += sbd->wallpaper_height / 6.0f * scale;
+        center.y -= mon_height / 6.0f;
+        draw_scaled(rect, sbd->wallpaper_texture, root->sprite_, center, scale, scale);
+      } else {
+        draw_scaled(rect, sbd->wallpaper_texture, root->sprite_, center, scale, scale);
+      }
     } else {
       std::stringstream sstr;
       sstr << "Invalid wallpaper style: " << sbd->style << ". ";
