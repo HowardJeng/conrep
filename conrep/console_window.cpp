@@ -101,6 +101,8 @@ namespace console {
         }
         if (!SetTimer(get_hwnd(), TIMER_REPAINT, REPAINT_TIME, 0)) WIN_EXCEPT("Failed SetTimer() call. ");
         if (!UpdateWindow(get_hwnd())) WIN_EXCEPT("Failed UpdateWindow() call. ");
+
+        set_icon();
       }
 
       ~ConsoleWindowImpl() {}
@@ -604,6 +606,14 @@ namespace console {
         } catch (boost::program_options::error & e) {
           MessageBox(get_hwnd(), TBuffer(e.what()), _T("--adjust error"), MB_OK);
         }
+      }
+
+      void set_icon(void) {
+        HICON hIcon = LoadIcon( GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICON1) );
+        if (!hIcon) WIN_EXCEPT("Error in LoadIcon() call. ");
+        actual_wnd_proc(WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+        actual_wnd_proc(WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+        if (!DestroyIcon(hIcon)) WIN_EXCEPT("Error in DestroyIcon() call. ");
       }
 
       LRESULT actual_wnd_proc(UINT Msg, WPARAM wParam, LPARAM lParam) {
