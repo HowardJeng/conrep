@@ -253,6 +253,11 @@ namespace console {
     D3DXVECTOR3 center(static_cast<float>(mon_width / 2),
                        static_cast<float>(mon_height / 2),
                        0);
+    OSVERSIONINFO osvi = {};
+    osvi.dwOSVersionInfoSize = sizeof(osvi);
+    if (!GetVersionEx(&osvi)) WIN_EXCEPT("Failed call to GetVersionEx(). ");
+
+    bool windows_8 = (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion == 2);
 
     if (sbd->style == TILE) {
       int tx_start = (lprcMonitor->left - sbd->origin_x) / sbd->wallpaper_width;
@@ -273,18 +278,19 @@ namespace console {
     } else if (sbd->style == STRETCH) {
       draw_scaled(rect, sbd->wallpaper_texture, root->sprite_, center, x_scale, y_scale);
     } else if (sbd->style == CENTER) {
-      draw_scaled(rect, sbd->wallpaper_texture, root->sprite_, center, 1.0f, 1.0f);
+      float scale = 1.0f;
+      if (windows_8) {
+        if (max(x_scale, y_scale) < 1.0f) scale = max(x_scale, y_scale);
+      }
+
+      draw_scaled(rect, sbd->wallpaper_texture, root->sprite_, center, scale, scale);
     } else if (sbd->style == ASPECT_PAD) {
       float scale = min(x_scale, y_scale);
       draw_scaled(rect, sbd->wallpaper_texture, root->sprite_, center, scale, scale);
     } else if (sbd->style == ASPECT_CROP) {
       float scale = max(x_scale, y_scale);
 
-      OSVERSIONINFO osvi = {};
-      osvi.dwOSVersionInfoSize = sizeof(osvi);
-      if (!GetVersionEx(&osvi)) WIN_EXCEPT("Failed call to GetVersionEx(). ");
-
-      if (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion == 2) {
+      if (windows_8) {
         // Windows 8 displays Wallpaper off center in Fill mode
         center.y += sbd->wallpaper_height / 6.0f * scale;
         center.y -= mon_height / 6.0f;
