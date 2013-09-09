@@ -3,6 +3,8 @@
 
 #include "settings.h"
 
+#include <ShlObj.h>
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -11,10 +13,15 @@
 #include "exception.h"
 #include "program_options.h"
 
+#include <boost/filesystem.hpp>
+
 using namespace boost::program_options;
+using namespace boost::filesystem;
 
 namespace console {
   const int MIN_COLUMNS = 40;
+
+  #define DEFAULT_CFGFILE "conrep.cfg"
 
   #ifdef UNICODE
     #define tvalue wvalue
@@ -41,7 +48,7 @@ namespace console {
   void add_cmd_line_options(options_description & opt, tstring * config_file_name) {
     options_description cmd_line_desc("Command line only options");
     cmd_line_desc.add_options()
-      ("cfgfile", tvalue(config_file_name)->DEFAULT_VALUE("conrep.cfg"), "configuration file")
+      ("cfgfile", tvalue(config_file_name)->DEFAULT_VALUE(DEFAULT_CFGFILE), "configuration file")
       ("adjust", "modify current conrep window")
       ("help", "display option descriptions")
     ;
@@ -148,6 +155,7 @@ namespace console {
     store(basic_command_line_parser<TCHAR>(args).options(cmd_line_desc).run(), vm);
     vm.notify();
     #define SCL(name) do { settings.scl_ ## name = !(vm[#name].defaulted()); } while (0)
+    SCL(cfgfile);
     SCL(font_name);
     SCL(font_size);
     SCL(rows);
@@ -207,7 +215,7 @@ namespace console {
     post_parse_fixups(vm, *this);
   }
 
-  Settings::Settings(LPCTSTR command_line, LPCTSTR exe_directory)
+  Settings::Settings(LPCTSTR command_line, LPCTSTR exe_directory, LPCTSTR working_directory)
     : run_app(true)
   {
     tstring config_file_name;
@@ -215,16 +223,34 @@ namespace console {
 
     parse_cmd_line(*this, vm, command_line, &config_file_name);
 
-    if ((config_file_name.find(_T('\\')) == tstring::npos) &&
-        (config_file_name.find(_T('/')) == tstring::npos)) {
-      config_file_name = tstring(exe_directory) + _T("\\") + config_file_name;
-    }
-
     options_description both_desc;
     add_both_options(both_desc, this);
     add_hidden_options(both_desc);
 
-    std::ifstream ifs(config_file_name.c_str());
+    std::ifstream ifs;
+    if (scl_cfgfile) {
+      path config_file_path(config_file_name);
+      if (config_file_path.is_absolute()) {
+        ifs.open(config_file_name);
+      } else {
+        ASSERT(config_file_path.is_relative());
+        ifs.open((path(working_directory) / config_file_name).c_str());
+      }
+      if (!ifs.is_open()) {
+        tstringstream sstr;
+        sstr << _T("Unable to open config file: ") << config_file_name;
+        MessageBox(NULL, sstr.str().c_str(), _T("Command line error"), MB_OK);
+      }
+    }
+    if (!ifs.is_open()) {
+      TCHAR appdata[MAX_PATH];
+      if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, appdata))) {
+        ifs.open((path(appdata) / _T("Conrep") / _T(DEFAULT_CFGFILE)).c_str());
+      }
+      if (!ifs.is_open()) {
+        ifs.open((path(exe_directory) / _T(DEFAULT_CFGFILE)).c_str());
+      }
+    }
     store(parse_config_file(ifs, both_desc), vm);
     vm.notify();
 

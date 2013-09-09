@@ -16,6 +16,12 @@
     <Filter Include="Source Files\boost program options">
       <UniqueIdentifier>{eb2269d3-ad05-43f7-991e-f9afe795eee0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\boost filesystem">
+      <UniqueIdentifier>{74f80896-ecae-4aeb-bfdf-218ffae8c677}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\boost system">
+      <UniqueIdentifier>{69ec9713-587e-46fa-aa80-ff4b15217c89}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="assert.cpp">
@@ -107,6 +113,33 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_54_0\libs\program_options\src\winmain.cpp">
       <Filter>Source Files\boost program options</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_54_0\libs\filesystem\src\codecvt_error_category.cpp">
+      <Filter>Source Files\boost filesystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_54_0\libs\filesystem\src\operations.cpp">
+      <Filter>Source Files\boost filesystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_54_0\libs\filesystem\src\path.cpp">
+      <Filter>Source Files\boost filesystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_54_0\libs\filesystem\src\path_traits.cpp">
+      <Filter>Source Files\boost filesystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_54_0\libs\filesystem\src\portability.cpp">
+      <Filter>Source Files\boost filesystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_54_0\libs\filesystem\src\unique_path.cpp">
+      <Filter>Source Files\boost filesystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_54_0\libs\filesystem\src\utf8_codecvt_facet.cpp">
+      <Filter>Source Files\boost filesystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_54_0\libs\filesystem\src\windows_file_codecvt.cpp">
+      <Filter>Source Files\boost filesystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\Include\boost_1_54_0\libs\system\src\error_code.cpp">
+      <Filter>Source Files\boost system</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

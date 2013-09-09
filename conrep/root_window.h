@@ -15,7 +15,9 @@ namespace console {
     size_t size;
     HWND   console_window;
     bool   adjust;
-    TCHAR  cmd_line[];
+    size_t cmd_line_length;
+    size_t working_directory_length;
+    TCHAR  char_data[];
   };
   #pragma warning(pop)
   typedef std::unique_ptr<MessageData, void (*)(void *)> MsgDataPtr;

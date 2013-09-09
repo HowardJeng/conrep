@@ -135,7 +135,7 @@ namespace console {
 
   bool RootWindow::spawn_window(const MessageData & message_data) {
     try {
-      Settings settings(message_data.cmd_line, get_exe_dir().c_str());
+      Settings settings(message_data.char_data, get_exe_dir().c_str(), &(message_data.char_data[message_data.cmd_line_length]));
       return spawn_window(settings);
     } catch (boost::program_options::error & e) {
       tstringstream sstr;

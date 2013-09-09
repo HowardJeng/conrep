@@ -23,7 +23,7 @@ namespace console {
 
   struct Settings {
     Settings(LPCTSTR command_line);
-    Settings(LPCTSTR command_line, LPCTSTR exe_directory);
+    Settings(LPCTSTR command_line, LPCTSTR exe_directory, LPCTSTR working_directory);
   
     bool run_app;
     
@@ -50,6 +50,8 @@ namespace console {
     unsigned int active_post_alpha;
     unsigned int inactive_pre_alpha;
     unsigned int inactive_post_alpha;
+
+    bool scl_cfgfile;
 
     bool scl_font_name;
     bool scl_font_size;

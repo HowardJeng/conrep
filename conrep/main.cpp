@@ -183,15 +183,19 @@ class MMapHWND {
     MMapHWND & operator=(const MMapHWND &);
 };
 
-MsgDataPtr get_message_data(bool adjust, const TCHAR * cmd_line) {
-  size_t length = _tcslen(cmd_line);
-  size_t size = sizeof(MessageData) + sizeof(TCHAR) * length;
+MsgDataPtr get_message_data(bool adjust, const TCHAR * cmd_line, const TCHAR * working_directory) {
+  size_t cmd_line_length = _tcslen(cmd_line) + 1;
+  size_t working_directory_length = _tcslen(working_directory) + 1;
+  size_t size = sizeof(MessageData) + sizeof(TCHAR) * (cmd_line_length + working_directory_length);
   MessageData * msg = (MessageData *)malloc(size);
   if (!msg) MISC_EXCEPT("Error allocating memory for message data. ");
   msg->size = size;
   msg->console_window = NULL;
   msg->adjust = adjust;
-  _tcscpy(msg->cmd_line, cmd_line);
+  msg->cmd_line_length = cmd_line_length;
+  msg->working_directory_length = working_directory_length;
+  _tcscpy(msg->char_data, cmd_line);
+  _tcscpy(&(msg->char_data[cmd_line_length]), working_directory);
   return MsgDataPtr(msg, &free);
 }
 
@@ -207,7 +211,8 @@ int try_print_help(void) {
 
 int send_data(bool adjust, LPCTSTR lpCmdLine, HWND hWnd) {
   ASSERT(hWnd != 0);
-  MsgDataPtr msg_data = get_message_data(adjust, lpCmdLine);
+  std::unique_ptr<TCHAR [], void (*)(void *)> working_directory(_tgetcwd(nullptr, 0), free);
+  MsgDataPtr msg_data = get_message_data(adjust, lpCmdLine, working_directory.get());
   COPYDATASTRUCT cds = {
     0,
     static_cast<DWORD>(msg_data->size),
@@ -292,7 +297,8 @@ int do_winmain1(HINSTANCE hInstance,
   COMInit com_initializer;
   
   RootWindowPtr root_window(get_root_window(hInstance, exe_dir, message));
-  Settings settings(lpCmdLine, exe_dir.c_str());
+  std::unique_ptr<TCHAR [], void (*)(void *)> working_directory(_tgetcwd(nullptr, 0), free);
+  Settings settings(lpCmdLine, exe_dir.c_str(), working_directory.get());
   execute_filter = settings.execute_filter;
 
   if (!root_window->spawn_window(settings)) return 0;

@@ -601,7 +601,7 @@ namespace console {
 
       void on_adjust(MessageData * msg_data) {
         try {
-          Settings settings(msg_data->cmd_line);
+          Settings settings(msg_data->char_data);
           on_adjust(settings);
         } catch (boost::program_options::error & e) {
           MessageBox(get_hwnd(), TBuffer(e.what()), _T("--adjust error"), MB_OK);
