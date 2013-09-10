@@ -21,7 +21,7 @@ using namespace boost::filesystem;
 namespace console {
   const int MIN_COLUMNS = 40;
 
-  #define DEFAULT_CFGFILE "conrep.cfg"
+  TCHAR DEFAULT_CFGFILE[] = _T("conrep.cfg");
 
   #ifdef UNICODE
     #define tvalue wvalue
@@ -48,7 +48,7 @@ namespace console {
   void add_cmd_line_options(options_description & opt, tstring * config_file_name) {
     options_description cmd_line_desc("Command line only options");
     cmd_line_desc.add_options()
-      ("cfgfile", tvalue(config_file_name)->DEFAULT_VALUE(DEFAULT_CFGFILE), "configuration file")
+      ("cfgfile", tvalue(config_file_name)->DEFAULT_VALUE(""), "configuration file")
       ("adjust", "modify current conrep window")
       ("help", "display option descriptions")
     ;
@@ -245,10 +245,10 @@ namespace console {
     if (!ifs.is_open()) {
       TCHAR appdata[MAX_PATH];
       if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, appdata))) {
-        ifs.open((path(appdata) / _T("Conrep") / _T(DEFAULT_CFGFILE)).c_str());
+        ifs.open((path(appdata) / _T("Conrep") / DEFAULT_CFGFILE).c_str());
       }
       if (!ifs.is_open()) {
-        ifs.open((path(exe_directory) / _T(DEFAULT_CFGFILE)).c_str());
+        ifs.open((path(exe_directory) / DEFAULT_CFGFILE).c_str());
       }
     }
     store(parse_config_file(ifs, both_desc), vm);
