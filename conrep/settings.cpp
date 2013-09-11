@@ -227,6 +227,12 @@ namespace console {
     add_both_options(both_desc, this);
     add_hidden_options(both_desc);
 
+    TCHAR appdata[MAX_PATH];
+    HRESULT hr = SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, appdata);
+    if (FAILED(hr)) WIN_EXCEPT2("Failed call to SHGetFolderPath. ", hr);
+    path appdata_path(appdata);
+    appdata_path /= _T("Conrep");
+
     std::ifstream ifs;
     if (scl_cfgfile) {
       path config_file_path(config_file_name);
@@ -235,6 +241,9 @@ namespace console {
       } else {
         ASSERT(config_file_path.is_relative());
         ifs.open((path(working_directory) / config_file_name).c_str());
+        if (!ifs.is_open()) {
+          ifs.open((appdata_path / config_file_name).c_str());
+        }
       }
       if (!ifs.is_open()) {
         tstringstream sstr;
@@ -243,10 +252,7 @@ namespace console {
       }
     }
     if (!ifs.is_open()) {
-      TCHAR appdata[MAX_PATH];
-      if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, appdata))) {
-        ifs.open((path(appdata) / _T("Conrep") / DEFAULT_CFGFILE).c_str());
-      }
+      ifs.open((appdata_path / DEFAULT_CFGFILE).c_str());
       if (!ifs.is_open()) {
         ifs.open((path(exe_directory) / DEFAULT_CFGFILE).c_str());
       }
