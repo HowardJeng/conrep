@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="E3B70976-5A11-46EA-BD0E-0067E091A74D" 
+           Name="Conrep 0.8" 
+           Language="1033" 
+           Version="0.8.0.0" 
+           Manufacturer="Howard Jeng" 
+           UpgradeCode="8B27D419-6855-4543-9BEA-C874E9EA7B84">
+		<Package InstallerVersion="200" 
+             Compressed="yes"
+             InstallScope="perMachine"
+             Manufacturer="Howard Jeng"
+             Comments="(c) 2013 Howard Jeng" />
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of Conrep is already installed." />
+		<MediaTemplate EmbedCab="yes" />
+    <UIRef Id="WixUI_FeatureTree" />
+    <UI>
+      <ProgressText Action="InstallDirectX">Installing DirectX 9.0c</ProgressText>
+    </UI>
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="Conrep">
+          <Directory Id="DXREDIST" Name="DirectXRedist" />
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="STARTMENUFOLDER" Name="Conrep" />
+      </Directory>
+    </Directory>
+
+    <DirectoryRef Id="STARTMENUFOLDER">
+      <Component Id="CMP_SHORTCUTS"
+                 Guid="88712ADC-8AA8-42C1-AD7E-FF1F99B24706">
+        <Shortcut Id="SHORT_EXE"
+                  Name="Conrep"
+                  Target="[INSTALLFOLDER]conrep.exe" />
+        <Shortcut Id="SHORT_README"
+                  Name="readme.txt"
+                  Target="[INSTALLFOLDER]readme.txt" />
+        <Shortcut Id="SHORT_UNINSTALL"
+                  Name="Uninstall Conrep"
+                  Target="[System64Folder]msiexec.exe"
+                  Arguments="/x [ProductCode]" />
+        <RemoveFolder Id="RemoveShortcutsDir" On="uninstall" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\Howard Jeng\Conrep"
+                       Name="installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="CMP_README_TXT"
+                 Guid="388BC0E4-B0C4-4455-9415-0226D1CAEC82">
+        <File Id="FILE_README_TXT" 
+              Source="../Package/readme.txt" 
+              KeyPath="yes" />
+      </Component>
+      <Component Id="CMP_EXE"
+                 Guid="9FE0C84E-5B4E-4CEC-A6D0-4E9E88C84070">
+        <File Id="FILE_EXE"
+              Source="../Release/Conrep.exe"
+              KeyPath ="yes" />
+      </Component>
+      <Component Id="CMP_PDB"
+                 Guid="50CFFACD-0F90-42B2-93EE-CFB463EEB723">
+        <File Id="FILE_PDB"
+              Source="../Release/Conrep.pdb"
+              KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="DXREDIST">
+      <Component Id="CMP_DXREDIST"
+                 Guid="4A24FCB0-52F0-4A59-90B5-B26D9AD23CE8">
+        <File Id="DXSETUP_EXE"
+              Source="DXRedist/DXSETUP.exe"
+              KeyPath="yes" />
+        <File Id="DSETUP_DLL"
+              Source="DXRedist/DSETUP.dll" />
+        <File Id="DSETUP32_DLL"
+              Source="DXRedist/dsetup32.dll" />
+        <File Id="DXDLLREG_X86_CAB"
+              Source="DXRedist/dxdllreg_x86.cab" />
+        <File Id="DXUPDATE_CAB"
+              Source="DXRedist/dxupdate.cab" />
+        <File Id="JUN2010_D3DX9_43_X86_CAB"
+              Source="DXRedist/Jun2010_d3dx9_43_x86.cab" />
+      </Component>
+    </DirectoryRef>
+
+    <Feature Id="Main"
+             Title="Main"
+             Level="1"
+             Absent="disallow">
+      <ComponentRef Id="CMP_README_TXT" />
+      <ComponentRef Id="CMP_EXE" />
+    </Feature>
+
+    <Feature Id="Shortcuts"
+             Title="Shortcuts"
+             Level="1">
+      <ComponentRef Id="CMP_SHORTCUTS" />
+    </Feature>
+
+    <Feature Id="DebuggingSymbols"
+             Title="Debugging Symbols"
+             Description="Database that allows for human readable stack traces"
+             Level="1">
+      <ComponentRef Id="CMP_PDB"/>
+    </Feature>
+
+    <Feature Id="DirectXRedist"
+             Title="DirectX Redistributable"
+             AllowAdvertise="no"
+             Display="hidden"
+             Level="1">
+      <ComponentRef Id="CMP_DXREDIST"/>
+    </Feature>
+
+    <CustomAction Id="InstallDirectX"
+                  FileKey="DXSETUP_EXE"
+                  ExeCommand="/silent"
+                  Execute="deferred"
+                  Impersonate="no"
+                  Return="check" />
+    <InstallExecuteSequence>
+      <Custom Action="InstallDirectX"
+              Before="InstallFinalize">
+        <![CDATA[NOT REMOVE]]>
+      </Custom>
+    </InstallExecuteSequence>
+  </Product>
+</Wix>
