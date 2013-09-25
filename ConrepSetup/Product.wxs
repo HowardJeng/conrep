@@ -18,6 +18,7 @@
     <UI>
       <ProgressText Action="InstallDirectX">Installing DirectX 9.0c</ProgressText>
     </UI>
+    <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
 
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFilesFolder">
@@ -57,7 +58,7 @@
       <Component Id="CMP_README_TXT"
                  Guid="388BC0E4-B0C4-4455-9415-0226D1CAEC82">
         <File Id="FILE_README_TXT" 
-              Source="../Package/readme.txt" 
+              Source="readme.txt"
               KeyPath="yes" />
       </Component>
       <Component Id="CMP_EXE"
