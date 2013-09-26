@@ -1,0 +1,7 @@
+conrep
+======
+This is a basic wrapper window for the Windows console window. This project originated one day when I realized that I spent a good deal of time getting a desktop wallpaper I liked and spent very little time at all actually looking at it. So first I looked for existing applications and found two (eConsole and bozho's Console). However, I didn't like the visual style of either, so I wrote my own.
+
+Originally this program just used GDI+ for all the rendering. However, this turned out to be too processor intensive, so I rewrote it to use DirectX 9. This was started in 2007 on my Windows XP box and I've used it and kept it up to date on my Windows Vista, 7 and 8 machines. However, over that time I've forgotten what "conrep" is short for. I know that the obvious "console replacement" isn't correct, because it was longer than two words.
+
+I also used this program as one of the testbeds for my article "The Visual C++ Exception Model" (published at http://www.gamedev.net/page/resources/_/technical/general-programming/the-visual-c-exception-model-r2488), so it does some excessively fancy work with handling SEH and C++ exceptions as proof of concept work for that article. This includes embedding Python to handle command line parsing basically just to show how to handle boost::python::error_already_set as one of the cases in the SEH handler. Eventually that became too unwieldy and I replaced the Python code with boost::program_options.
